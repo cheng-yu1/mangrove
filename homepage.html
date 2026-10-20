@@ -1,0 +1,3347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>红树林百科</title>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    button, a { touch-action: manipulation; }
+    html, body { width: 100%; overflow-x: hidden; }
+    body {
+        font-family: "Helvetica Neue", "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: #071a12;
+        color: #fff;
+        -webkit-font-smoothing: antialiased;
+        cursor: none;
+        -webkit-tap-highlight-color: transparent;
+        -webkit-text-size-adjust: 100%;
+    }
+    body.lock-scroll { overflow: hidden; }
+
+    #cursor-dot {
+        position: fixed; top: 0; left: 0;
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        box-shadow: 0 0 12px rgba(255, 255, 255, 0.95), 0 0 30px rgba(255, 200, 150, 0.8);
+        pointer-events: none;
+        z-index: 9999;
+        transform: translate(-50%, -50%);
+        will-change: transform;
+        transition: width 0.3s ease, height 0.3s ease, background 0.3s ease;
+    }
+    #cursor-ring {
+        position: fixed; top: 0; left: 0;
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        border: 1px solid rgba(255, 255, 255, 0.5);
+        pointer-events: none;
+        z-index: 9998;
+        transform: translate(-50%, -50%);
+        will-change: transform;
+        transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease;
+    }
+    body.hover-interactive #cursor-dot { width: 18px; height: 18px; background: rgba(130, 230, 180, 1); }
+    body.hover-interactive #cursor-ring { width: 60px; height: 60px; border-color: rgba(130, 230, 180, 0.9); }
+    @media (hover: none), (pointer: coarse) {
+        #cursor-dot, #cursor-ring { display: none !important; }
+        body, a, button { cursor: auto !important; }
+    }
+
+    #ripple-canvas {
+        position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        z-index: 9997;
+        pointer-events: none;
+    }
+
+    .flash-effect {
+        position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: #fff;
+        z-index: 99999;
+        opacity: 0;
+        pointer-events: none;
+    }
+    .flash-effect.fire { animation: flashFire 0.5s ease-out; }
+    @keyframes flashFire {
+        0%   { opacity: 0; }
+        12%  { opacity: 0.95; }
+        100% { opacity: 0; }
+    }
+
+    .bottom-right-group {
+        position: fixed; bottom: 5%; right: 5%;
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+    }
+    .icon-btn {
+        width: 48px; height: 48px;
+        border-radius: 50%;
+        background: rgba(0,0,0,0.35);
+        border: 1px solid rgba(255,255,255,0.5);
+        color: white;
+        font-size: 20px;
+        cursor: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.5s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        font-family: inherit;
+        padding: 0;
+        margin-left: 8px;
+Advertisement    }
+    .icon-btn:first-child { margin-left: 0; }
+    #replay-btn svg {
+        width: 22px; height: 22px;
+        stroke: currentColor;
+        stroke-width: 1.8;
+        fill: none;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+    }
+
+    .page-transition {
+        position: fixed; top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: #071a12;
+        z-index: 999999;
+        pointer-events: none;
+        opacity: 0;
+    }
+    .page-transition.enter { animation: pageEnterAnim 0.9s cubic-bezier(0.4, 0, 0.2, 1) forwards; }
+    @keyframes pageEnterAnim { 0% { opacity: 1; } 100% { opacity: 0; } }
+    .page-transition.exit { opacity: 1 !important; animation: none; transition: opacity 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+
+    /* ==================== 第一屏 ==================== */
+    .cinema-hero {
+        position: relative;
+        width: 100%; height: 100vh; height: 100dvh;
+        overflow: hidden;
+        background: #050A08;
+    }
+    .hero-bgs { position: absolute; top:0; right:0; bottom:0; left:0; z-index: 0; }
+    .bg-img {
+        position: absolute; top:0; right:0; bottom:0; left:0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+        object-position: center;
+        opacity: 0;
+        transform: scale(1.08);
+        filter: brightness(0.72) saturate(1.1);
+        transition: opacity 1.2s ease, filter 1.2s ease;
+        pointer-events: none;
+        will-change: transform, opacity;
+    }
+    .bg-img[data-role="preview"] {
+        opacity: 1;
+        transform: scale(1.02);
+        filter: brightness(0.55) saturate(1.05);
+        animation: previewBreath 12s ease-in-out infinite alternate;
+    }
+    @keyframes previewBreath {
+        0%   { transform: scale(1.02); }
+        100% { transform: scale(1.06); }
+    }
+    .cinema-hero[data-state="recording"] .bg-img[data-role="preview"],
+    .cinema-hero[data-state="paused"] .bg-img[data-role="preview"],
+    .cinema-hero[data-state="done"] .bg-img[data-role="preview"] {
+        opacity: 0; animation: none;
+    }
+    .bg-img.active {
+        opacity: 1;
+        animation: kenBurns 8s ease-out forwards;
+    }
+    @keyframes kenBurns {
+        0%   { transform: scale(1.05); }
+        100% { transform: scale(1.13); }
+    }
+    .cinema-hero[data-state="paused"] .bg-img.active { animation-play-state: paused; }
+
+    .hero-vignette {
+        position: absolute; top:0; right:0; bottom:0; left:0;
+        z-index: 3; pointer-events: none;
+        background: radial-gradient(ellipse at center, transparent 35%, rgba(5, 10, 8, 0.5) 75%, rgba(5, 10, 8, 0.85) 100%);
+    }
+
+    .viewfinder { position: absolute; top:0; right:0; bottom:0; left:0; z-index: 5; pointer-events: none; }
+    .vf-corner { position: absolute; width: 48px; height: 48px; border: 0 solid rgba(255, 255, 255, 0.68); }
+    .vf-corner--tl { top: 28px; left: 28px; border-top-width: 1.5px; border-left-width: 1.5px; }
+    .vf-corner--tr { top: 28px; right: 28px; border-top-width: 1.5px; border-right-width: 1.5px; }
+    .vf-corner--bl { bottom: 28px; left: 28px; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+    .vf-corner--br { bottom: 28px; right: 28px; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+    .vf-grid { position: absolute; top:28px; right:28px; bottom:28px; left:28px; }
+    .vf-line { position: absolute; background: rgba(255, 255, 255, 0.07); }
+    .vf-line--h1 { top: 33.33%; left: 0; right: 0; height: 1px; }
+    .vf-line--h2 { top: 66.66%; left: 0; right: 0; height: 1px; }
+    .vf-line--v1 { left: 33.33%; top: 0; bottom: 0; width: 1px; }
+    .vf-line--v2 { left: 66.66%; top: 0; bottom: 0; width: 1px; }
+    .vf-center { position: absolute; top: 50%; left: 50%; width: 32px; height: 32px; transform: translate(-50%, -50%); opacity: 0.4; }
+    .vf-center::before, .vf-center::after { content: ''; position: absolute; background: rgba(255, 255, 255, 0.5); }
+    .vf-center::before { top: 50%; left: 0; width: 100%; height: 1px; transform: translateY(-50%); }
+    .vf-center::after { left: 50%; top: 0; width: 1px; height: 100%; transform: translateX(-50%); }
+    .vf-info {
+        position: absolute; left: 52px; right: 52px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-family: 'Courier New', monospace;
+        font-size: 11px; font-weight: 400; letter-spacing: 0.18em;
+        color: rgba(255, 255, 255, 0.6);
+        text-transform: uppercase;
+        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+    }
+    .vf-info--top { top: 36px; }
+    .vf-info--bottom { bottom: 36px; }
+    .vf-rec { display: inline-flex; align-items: center; color: rgba(255, 255, 255, 0.92); }
+    .vf-rec-dot { width: 7px; height: 7px; border-radius: 50%; background: #8FA89A; margin-right: 9px; transition: background 0.3s ease, box-shadow 0.3s ease; }
+    .cinema-hero[data-state="recording"] .vf-rec-dot { background: #E05252; box-shadow: 0 0 10px rgba(224, 82, 82, 0.8); animation: recBlink 1.6s ease-in-out infinite; }
+    .cinema-hero[data-state="paused"] .vf-rec-dot { background: #C9973F; box-shadow: 0 0 10px rgba(201, 151, 63, 0.7); }
+    .cinema-hero[data-state="done"] .vf-rec-dot { background: #82e6b4; box-shadow: 0 0 10px rgba(130, 230, 180, 0.7); }
+    @keyframes recBlink { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+    .cinema-text {
+        position: absolute;
+        top: 45%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100%; max-width: 1100px;
+        padding: 0 40px;
+        z-index: 8; text-align: center; pointer-events: none;
+    }
+    .cinema-text .line {
+        position: absolute; top: 0; left: 0; width: 100%;
+        font-family: "Songti SC", "Noto Serif SC", serif;
+        font-size: 24px;
+        font-size: clamp(20px, 2.2vw, 30px);
+        font-weight: 400; letter-spacing: 0.18em; line-height: 1.85;
+        color: #fff;
+        text-shadow: 0 2px 30px rgba(0, 0, 0, 0.9), 0 0 60px rgba(0, 0, 0, 0.6), 0 1px 3px rgba(0, 0, 0, 0.8);
+        opacity: 0; transform: translateY(20px);
+        transition: opacity 1.2s ease, transform 1.2s ease;
+    }
+    .cinema-text .line.active { opacity: 1; transform: translateY(0) translateZ(0); }
+
+    .end-credit {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, calc(-50% + 40px)) scale(0.94);
+        z-index: 9;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 46px 0; text-align: center; white-space: nowrap;
+        opacity: 0; pointer-events: none;
+        filter: blur(14px);
+        transition: opacity 1.8s cubic-bezier(0.16, 1, 0.3, 1), transform 1.8s cubic-bezier(0.16, 1, 0.3, 1), filter 1.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .end-credit-main {
+        font-family: "Songti SC", "Noto Serif SC", serif;
+        font-size: 40px;
+        font-size: clamp(28px, 4vw, 56px);
+        font-weight: 300; letter-spacing: 0.45em; padding-left: 0.45em;
+        color: rgba(255, 255, 255, 0.96);
+        text-shadow: 0 4px 40px rgba(0, 0, 0, 0.95), 0 0 80px rgba(0, 0, 0, 0.7), 0 0 120px rgba(126, 232, 181, 0.12);
+        margin-bottom: 20px;
+    }
+    .end-credit-sub {
+        font-family: "Songti SC", "Noto Serif SC", serif;
+        font-size: 14px;
+        font-size: clamp(12px, 1.3vw, 16px);
+        font-weight: 300; letter-spacing: 0.5em; padding-left: 0.5em;
+        color: rgba(201, 151, 63, 0.85);
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.9), 0 0 40px rgba(201, 151, 63, 0.3);
+    }
+    .end-credit::before, .end-credit::after {
+        content: ''; position: absolute; left: 50%;
+        width: 280px; height: 1px;
+        background: linear-gradient(90deg, transparent 0%, rgba(201, 151, 63, 0.7) 50%, transparent 100%);
+        transform: translateX(-50%) scaleX(0); transform-origin: center;
+        transition: transform 1.6s cubic-bezier(0.16, 1, 0.3, 1) 0.6s;
+    }
+    .end-credit::before { top: 0; }
+    .end-credit::after { bottom: 0; }
+    .end-credit.show { opacity: 1; transform: translate(-50%, -50%) scale(1); filter: blur(0); }
+    .end-credit.show::before, .end-credit.show::after { transform: translateX(-50%) scaleX(1); }
+
+    .shutter {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 10;
+        width: 140px; height: 140px;
+        border: 0; background: transparent;
+        cursor: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        -webkit-tap-highlight-color: transparent;
+        outline: none;
+        padding: 0;
+    }
+    .cinema-hero[data-state="recording"] .shutter,
+    .cinema-hero[data-state="paused"] .shutter,
+    .cinema-hero[data-state="done"] .shutter {
+        opacity: 0; pointer-events: none;
+        transform: translate(-50%, -50%) scale(0.5);
+    }
+    .shutter-ring {
+        position: absolute; top: 0; left: 50%;
+        transform: translateX(-50%);
+        width: 76px; height: 76px;
+        border-radius: 50%;
+        border: 1.5px solid rgba(255, 255, 255, 0.55);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .shutter-inner {
+        position: absolute; top: 18px; left: 50%;
+        transform: translateX(-50%);
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.96);
+        box-shadow: 0 0 32px rgba(255, 255, 255, 0.35);
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .shutter-label {
+        position: absolute; bottom: -12px; left: 50%;
+        transform: translateX(-50%);
+        font-size: 12px; letter-spacing: 0.42em; padding-left: 0.42em;
+        color: rgba(255, 255, 255, 0.88);
+        white-space: nowrap;
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.85);
+    }
+    .shutter:hover .shutter-ring { width: 88px; height: 88px; top: -6px; border-color: rgba(255, 255, 255, 0.95); }
+    .shutter:hover .shutter-inner { transform: translateX(-50%) scale(1.08); box-shadow: 0 0 44px rgba(255, 255, 255, 0.55); }
+
+    .pause-indicator {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%) scale(0.9);
+        z-index: 15;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 80px; height: 80px;
+        border-radius: 50%;
+        background: rgba(5, 10, 8, 0.7);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .cinema-hero[data-state="paused"] .pause-indicator { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+    .pause-indicator::before, .pause-indicator::after { content: ''; width: 5px; height: 22px; background: rgba(255, 255, 255, 0.92); border-radius: 1px; }
+    .pause-indicator::before { margin-right: 8px; }
+
+    .scroll-cue {
+        position: absolute; bottom: 44px; left: 50%;
+        transform: translateX(-50%) translateY(12px);
+        z-index: 10;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 11px; letter-spacing: 0.45em; padding-left: 0.45em;
+        color: rgba(255, 255, 255, 0.75);
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+        opacity: 0; pointer-events: none;
+        transition: opacity 1s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .scroll-cue.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+    .scroll-cue-arrow {
+        width: 20px; height: 20px;
+        stroke: currentColor; stroke-width: 1.5; fill: none;
+        stroke-linecap: round; stroke-linejoin: round;
+        animation: arrowFloat 2.4s ease-in-out infinite;
+        margin-top: 12px;
+    }
+    @keyframes arrowFloat {
+        0%, 100% { transform: translateY(0); opacity: 0.5; }
+        50%      { transform: translateY(7px); opacity: 1; }
+    }
+
+    /* ==================== 第二屏 ==================== */
+    .baike-story-scroll {
+        position: relative;
+        height: 100vh; height: 100dvh;
+        overflow: hidden;
+        background: #071a12;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8%;
+    }
+    .baike-story-scroll::after {
+        content: ''; position: absolute; bottom: 0; left: 0;
+        width: 100%; height: 30%;
+        background: linear-gradient(to bottom, transparent 0%, rgba(7, 26, 18, 0.5) 50%, #0d1e18 100%);
+        pointer-events: none; z-index: 10;
+    }
+    .story-inner {
+        position: relative; z-index: 2;
+        display: flex;
+        align-items: center;
+        width: 100%; max-width: 1200px;
+    }
+    .story-image-wrap { flex: 1; min-width: 0; margin-right: 5%; }
+    .story-image-frame {
+        position: relative; width: 100%; height: 62vh;
+        border-radius: 10px; overflow: hidden;
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(130, 230, 180, 0.15);
+        background: linear-gradient(135deg, rgba(10, 26, 18, 0.9) 0%, rgba(6, 18, 12, 0.95) 100%);
+        cursor: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: box-shadow 0.4s ease;
+    }
+    .story-image-frame:hover { box-shadow: 0 40px 100px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(130, 230, 180, 0.4); }
+    .story-image-frame img {
+        max-width: 100%; max-height: 100%;
+        width: auto; height: auto;
+        object-fit: contain; display: block;
+        user-select: none;
+        -webkit-user-drag: none; -webkit-touch-callout: none;
+        will-change: transform;
+        transition: opacity 0.5s ease;
+    }
+    .story-image-frame img.leaving { opacity: 0; }
+
+    .zoom-hint {
+        position: absolute; bottom: 12px; right: 14px;
+        z-index: 3;
+        font-size: 11px; letter-spacing: 0.1em;
+        color: rgba(255, 255, 255, 0.75);
+        padding: 6px 12px;
+        background: rgba(0, 0, 0, 0.6);
+        border-radius: 20px;
+        pointer-events: none;
+        display: inline-flex;
+        align-items: center;
+    }
+    .zoom-hint svg { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; margin-right: 6px; }
+
+    .story-album-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 20px; padding: 0 4px;
+    }
+    .story-page-indicator { display: flex; align-items: center; }
+    .story-page-indicator .dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255, 255, 255, 0.25); margin-right: 6px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+    .story-page-indicator .dot.active { width: 22px; border-radius: 4px; background: #82e6b4; box-shadow: 0 0 12px rgba(130, 230, 180, 0.6); }
+    .story-page-indicator .count { font-size: 12px; letter-spacing: 0.2em; color: rgba(255, 255, 255, 0.5); margin-left: 4px; }
+    .story-nav-group { display: flex; align-items: center; }
+    .story-nav-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 20px;
+        background: rgba(130, 230, 180, 0.1);
+        border: 1px solid rgba(130, 230, 180, 0.4);
+        border-radius: 40px;
+        color: #ffffff; font-size: 12px; letter-spacing: 0.15em;
+        cursor: none;
+        transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        font-family: inherit; white-space: nowrap;
+        margin-left: 8px;
+    }
+    .story-nav-btn:first-child { margin-left: 0; }
+    .story-nav-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; margin-right: 6px; }
+    .story-nav-btn:last-child svg { margin-right: 0; margin-left: 6px; }
+
+    .story-text { flex: 1; min-width: 0; color: #fff; }
+    .story-text .tag { font-size: 13px; font-weight: 400; letter-spacing: 0.8em; color: #82e6b4; margin-bottom: 30px; padding-left: 0.8em; text-shadow: 0 0 30px rgba(130, 230, 180, 0.5); }
+    .story-text h2 {
+        font-size: 32px;
+        font-size: clamp(22px, 2.8vw, 42px);
+        font-weight: 300; letter-spacing: 0.12em; line-height: 1.5;
+        color: #ffffff; margin-bottom: 30px;
+        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.5);
+    }
+    .story-text h2 .highlight { color: #82e6b4; font-weight: 400; }
+    .story-text p {
+        font-size: 14px;
+        font-size: clamp(12px, 1.05vw, 15px);
+        font-weight: 300; line-height: 2.1; letter-spacing: 0.12em;
+        color: rgba(255, 255, 255, 0.8); margin-bottom: 18px;
+        text-shadow: 0 1px 8px rgba(0, 0, 0, 0.3);
+    }
+    .story-text p:last-child { margin-bottom: 0; }
+    .story-text p .green { color: #82e6b4; font-weight: 400; }
+
+    /* ==================== Lightbox ==================== */
+    .lightbox {
+        position: fixed; top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        z-index: 100001;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        opacity: 0; transition: opacity 0.4s ease;
+    }
+    .lightbox.show { display: flex; opacity: 1; }
+    .lightbox-backdrop { position: absolute; top:0; right:0; bottom:0; left:0; background: rgba(0, 0, 0, 0.94); cursor: zoom-out; }
+    .lightbox-img {
+        position: relative; z-index: 2;
+        max-width: 92vw; max-height: 92vh;
+        object-fit: contain;
+        user-select: none;
+        -webkit-user-drag: none;
+        cursor: grab;
+        will-change: transform;
+        transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6);
+    }
+    .lightbox-img.grabbing { cursor: grabbing; transition: none; }
+    .lightbox-close {
+        position: absolute; top: 24px; right: 24px; z-index: 3;
+        width: 44px; height: 44px; border-radius: 50%;
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff; font-size: 18px; cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: inherit; transition: background 0.25s ease; padding: 0;
+    }
+    .lightbox-close:hover { background: rgba(255, 255, 255, 0.25); }
+    .lightbox-hint {
+        position: absolute; bottom: 24px; left: 50%;
+        transform: translateX(-50%); z-index: 3;
+        font-size: 11px; letter-spacing: 0.2em;
+        color: rgba(255, 255, 255, 0.55);
+        padding: 8px 20px; background: rgba(0, 0, 0, 0.5);
+        border-radius: 20px; pointer-events: none; white-space: nowrap;
+    }
+
+    /* ==================== 第三屏 ==================== */
+    .library-section {
+        position: relative;
+        height: 100vh; height: 100dvh;
+        overflow: hidden;
+        background: #0d1e18;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 6%;
+    }
+
+    .library-bg {
+        position: absolute; top:0; right:0; bottom:0; left:0;
+        z-index: 0;
+        transform: translateY(-100%);
+        opacity: 0;
+        pointer-events: none;
+        will-change: transform, opacity;
+    }
+    .library-bg img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        filter: brightness(1) saturate(1.05);
+        transition: filter 1.4s ease;
+    }
+    .library-section.bg-dark .library-bg img {
+        filter: brightness(0.42) saturate(0.9) hue-rotate(-10deg);
+    }
+
+    .library-mask {
+        position: absolute; top:0; right:0; bottom:0; left:0;
+        z-index: 1;
+        background:
+            radial-gradient(ellipse 60% 70% at 25% 50%, rgba(201, 151, 63, 0.12) 0%, transparent 55%),
+            radial-gradient(ellipse 50% 60% at 78% 45%, rgba(126, 232, 181, 0.08) 0%, transparent 55%),
+            rgba(5, 10, 8, 0.4);
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 1.4s ease;
+    }
+    .library-section.bg-in .library-mask { opacity: 1; }
+
+    .library-content {
+        position: relative; z-index: 5;
+        width: 100%;
+        max-width: 1000px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 40px;
+    }
+
+    .book-area {
+        flex: 0 0 auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        opacity: 0;
+        transform: translateY(60px);
+        transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.3s;
+    }
+    .library-section.is-ready .book-area {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .scan-area {
+        flex: 0 0 auto;
+        max-width: 320px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        opacity: 0;
+        transform: translateY(60px);
+        transition: opacity 1s cubic-bezier(0.16, 1, 0.3, 1) 0.55s, transform 1s cubic-bezier(0.16, 1, 0.3, 1) 0.55s;
+    }
+    .library-section.is-ready .scan-area {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    .book-clip {
+        position: relative;
+        width: 300px;
+        display: flex;
+        justify-content: center;
+        overflow: visible;
+        transition: width 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .book-clip.open {
+        width: 600px;
+    }
+
+    .book {
+        position: relative;
+        width: 600px;
+        flex-shrink: 0;
+        height: 390px;
+        perspective: 1400px;
+        margin-left: -300px;
+        transition: margin-left 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .book-clip.open .book {
+        margin-left: 0;
+    }
+
+    .book-cover {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 50%;
+        height: 100%;
+        transform-origin: left center;
+        transform-style: preserve-3d;
+        transform: rotateY(0deg);
+        transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+        cursor: none;
+        z-index: 10;
+        will-change: transform;
+    }
+
+    .book-clip.open .book-cover {
+        transform: rotateY(-180deg);
+        cursor: default;
+    }
+
+    .book-cover-face {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        backface-visibility: hidden;
+        overflow: hidden;
+    }
+
+    .book-cover-face--front {
+        background: linear-gradient(135deg, #1e3a2b 0%, #142a1e 50%, #0d1e18 100%);
+        border-radius: 0 6px 6px 0;
+        box-shadow:
+            0 20px 50px rgba(0, 0, 0, 0.6),
+            0 4px 15px rgba(0, 0, 0, 0.4),
+            inset 0 0 60px rgba(0, 0, 0, 0.3);
+    }
+
+    .book-cover-face--front::before {
+        content: '';
+        position: absolute;
+        top: 14px; right: 14px; bottom: 14px; left: 14px;
+        border: 1px solid rgba(201, 151, 63, 0.5);
+        border-radius: 2px;
+        pointer-events: none;
+        z-index: 4;
+    }
+
+    .book-cover-face--front::after {
+        content: '';
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        background: linear-gradient(
+            to right,
+            rgba(0, 0, 0, 0.75) 0%,
+            rgba(0, 0, 0, 0.35) 25%,
+            rgba(0, 0, 0, 0.1) 55%,
+            transparent 100%
+        );
+        opacity: 0;
+        pointer-events: none;
+        z-index: 5;
+        border-radius: 0 6px 6px 0;
+    }
+    .book-clip.flipping.open .book-cover-face--front::after {
+        animation: coverFlipShadow 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    @keyframes coverFlipShadow {
+        0%   { opacity: 0; }
+        20%  { opacity: 0.55; }
+        50%  { opacity: 0.95; }
+        80%  { opacity: 0.55; }
+        100% { opacity: 0; }
+    }
+
+    .book-cover-face--back {
+        background: linear-gradient(135deg, #f5efdf 0%, #e8dfc8 100%);
+        border-radius: 6px 0 0 6px;
+        transform: rotateY(180deg);
+        box-shadow: inset 20px 0 30px -20px rgba(0, 0, 0, 0.25);
+    }
+
+    .book-cover-face--back::before {
+        content: '';
+        position: absolute;
+        top: 14px; right: 14px; bottom: 14px; left: 14px;
+        border: 1px solid rgba(139, 111, 63, 0.3);
+        border-radius: 2px;
+        pointer-events: none;
+    }
+
+    .book-spine {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 24px;
+        height: 100%;
+        background: linear-gradient(90deg, rgba(0, 0, 0, 0.65) 0%, rgba(0, 0, 0, 0.25) 55%, transparent 100%);
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    .book-cover-face--back .book-spine--right {
+        left: auto;
+        right: 0;
+        background: linear-gradient(270deg, rgba(139, 111, 63, 0.35) 0%, rgba(139, 111, 63, 0.15) 55%, transparent 100%);
+    }
+
+    .book-cover-content {
+        position: absolute;
+        top: 0; right: 0; bottom: 0; left: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 30px;
+        z-index: 3;
+    }
+
+    .book-title-cn {
+        font-family: "Songti SC", "Noto Serif SC", serif;
+        font-size: clamp(20px, 2vw, 30px);
+        font-weight: 600;
+        letter-spacing: 0.3em;
+        color: #d4b06a;
+        writing-mode: vertical-rl;
+        text-orientation: upright;
+        text-shadow: 0 0 24px rgba(201, 151, 63, 0.5), 0 2px 6px rgba(0, 0, 0, 0.6);
+        padding: 16px 0;
+    }
+
+    .book-title-en {
+        position: absolute;
+        bottom: 48px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 8px;
+        letter-spacing: 0.4em;
+        padding-left: 0.4em;
+        color: rgba(201, 151, 63, 0.7);
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .book-cover-content--back {
+        padding: 24px 20px;
+    }
+
+    .back-slogan {
+        font-family: "Songti SC", "Noto Serif SC", serif;
+        font-size: clamp(14px, 1.4vw, 18px);
+        line-height: 2;
+        letter-spacing: 0.3em;
+        color: #8b6f3f;
+        text-align: center;
+        text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+    }
+
+    .book-inner {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(135deg, #f5efdf 0%, #e8dfc8 100%);
+        border-radius: 0 6px 6px 0;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: inset -20px 0 30px -20px rgba(0, 0, 0, 0.25);
+    }
+
+    .book-inner::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 18px;
+        height: 100%;
+        background: linear-gradient(90deg, rgba(139, 111, 63, 0.25) 0%, rgba(139, 111, 63, 0.08) 45%, transparent 100%);
+        pointer-events: none;
+        z-index: 3;
+    }
+
+    .book-preview {
+        position: relative;
+        flex: 1;
+        min-height: 0;
+        overflow: hidden;
+        background: #0d1e18;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px 16px 0;
+        perspective: 800px;
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .book-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        display: block;
+        transform-origin: center center;
+        transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        backface-visibility: hidden;
+        will-change: transform, opacity;
+    }
+
+    .book-preview img.switching {
+        opacity: 0;
+        transform: scale(0.96);
+        transition: opacity 0.2s ease-in,
+                    transform 0.25s ease-in;
+    }
+
+    .book-preview-caption {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 14px 18px 12px;
+        background: linear-gradient(to top, rgba(13, 30, 24, 0.95) 0%, rgba(13, 30, 24, 0.7) 60%, transparent 100%);
+        z-index: 2;
+        text-align: left;
+        pointer-events: none;
+        transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+                    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .book-preview-caption.switching {
+        opacity: 0;
+        transform: translateY(6px);
+        transition: opacity 0.18s ease-in,
+                    transform 0.2s ease-in;
+    }
+
+    .book-preview-caption .cp-name {
+        font-family: "Songti SC", "Noto Serif SC", serif;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        color: #d4b06a;
+        margin-bottom: 3px;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+    }
+    .book-preview-caption .cp-en {
+        font-family: 'Courier New', monospace;
+        font-size: 9px;
+        letter-spacing: 0.25em;
+        color: rgba(212, 176, 106, 0.75);
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .book-preview-caption .cp-desc {
+        font-size: 11px;
+        line-height: 1.6;
+        color: rgba(255, 255, 255, 0.75);
+        letter-spacing: 0.03em;
+    }
+
+    .book-categories {
+        flex-shrink: 0;
+        padding: 6px;
+        display: flex;
+        background: linear-gradient(180deg, #f5efdf 0%, #e8dfc8 100%);
+        position: relative;
+        z-index: 2;
+        opacity: 0;
+        transform: translateY(16px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    .book-category {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 8px 2px 6px;
+        border-radius: 6px;
+        text-decoration: none;
+        color: #3a2e1f;
+        transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        cursor: pointer;
+        background: transparent;
+        border: 1.5px solid transparent;
+        position: relative;
+        margin: 0 1.5px;
+    }
+    .book-category:first-child { margin-left: 0; }
+    .book-category:last-child { margin-right: 0; }
+
+    .book-category.active {
+        background: linear-gradient(135deg, #d4b06a 0%, #b8893e 100%);
+        border-color: #8b6f3f;
+        box-shadow: 0 3px 12px rgba(201, 151, 63, 0.5), 0 0 0 1.5px rgba(212, 176, 106, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .book-category.active .book-category-name {
+        color: #2a1f0d;
+    }
+
+    .book-category-name {
+        font-family: "Songti SC", "Noto Serif SC", serif;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.15em;
+        color: #3a2e1f;
+        transition: color 0.3s ease;
+    }
+
+    .book-clip.open .book-preview {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.5s ease 0.9s, transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) 0.9s;
+    }
+    .book-clip.open .book-preview-caption {
+        opacity: 1;
+        transition: opacity 0.5s ease 1.1s;
+    }
+    .book-clip.open .book-categories {
+        opacity: 1;
+        transform: translateY(0);
+        transition: opacity 0.5s ease 1.3s, transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1) 1.3s;
+    }
+
+    .book-close {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        z-index: 20;
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.55);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #fff;
+        font-size: 14px;
+        cursor: pointer;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        font-family: inherit;
+        opacity: 0;
+        padding: 0;
+    }
+    .book-clip.open .book-close {
+        display: flex;
+        opacity: 1;
+        transition-delay: 1.6s;
+    }
+    .book-close:hover {
+        background: rgba(0, 0, 0, 0.8);
+        transform: scale(1.08);
+    }
+
+    .book-hint {
+        margin-top: 24px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        font-size: 12px; letter-spacing: 0.5em; padding-left: 0.5em;
+        color: rgba(255, 255, 255, 0.75);
+        text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+        transition: opacity 0.5s ease;
+        cursor: none;
+    }
+    .book-hint.hide { opacity: 0; pointer-events: none; }
+    .book-hint-arrow {
+        width: 16px; height: 16px;
+        stroke: currentColor; stroke-width: 1.8; fill: none;
+        stroke-linecap: round; stroke-linejoin: round;
+        animation: hintBounce 2s ease-in-out infinite;
+        margin-top: 10px;
+    }
+    @keyframes hintBounce {
+        0%, 100% { transform: translateY(0); opacity: 0.5; }
+        50%      { transform: translateY(6px); opacity: 1; }
+    }
+
+    .scan-card {
+        position: relative;
+        width: 100%;
+        padding: 36px 26px 28px;
+        background: linear-gradient(160deg, rgba(13, 30, 24, 0.95) 0%, rgba(5, 10, 8, 0.98) 100%);
+        border: 1px solid rgba(126, 232, 181, 0.2);
+        border-radius: 16px;
+        text-align: center;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        box-shadow: 0 30px 80px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+    .scan-card::before {
+        content: ''; position: absolute; top: -1px; right: -1px; bottom: -1px; left: -1px;
+        border-radius: 17px;
+        background: linear-gradient(135deg, rgba(126, 232, 181, 0.3) 0%, transparent 40%, transparent 60%, rgba(201, 151, 63, 0.3) 100%);
+        z-index: -1; opacity: 0.5;
+    }
+    .scan-tag {
+        display: inline-block;
+        font-family: 'Courier New', monospace;
+        font-size: 10px; letter-spacing: 0.4em; padding-left: 0.4em;
+        color: #82e6b4;
+        padding: 5px 12px;
+        border: 1px solid rgba(126, 232, 181, 0.4);
+        border-radius: 20px;
+        margin-bottom: 24px;
+        text-transform: uppercase;
+    }
+    .scan-icon {
+        position: relative;
+        width: 84px; height: 84px;
+        margin: 0 auto 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .scan-icon-corner { position: absolute; width: 18px; height: 18px; border: 0 solid #82e6b4; }
+    .scan-icon-corner--tl { top: 0; left: 0; border-top-width: 1.5px; border-left-width: 1.5px; }
+    .scan-icon-corner--tr { top: 0; right: 0; border-top-width: 1.5px; border-right-width: 1.5px; }
+    .scan-icon-corner--bl { bottom: 0; left: 0; border-bottom-width: 1.5px; border-left-width: 1.5px; }
+    .scan-icon-corner--br { bottom: 0; right: 0; border-bottom-width: 1.5px; border-right-width: 1.5px; }
+    .scan-icon-center {
+        width: 40px; height: 40px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(126, 232, 181, 0.2), rgba(126, 232, 181, 0.05));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: scanPulse 2.4s ease-in-out infinite;
+    }
+    @keyframes scanPulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(126, 232, 181, 0.4); }
+        50%      { transform: scale(1.08); box-shadow: 0 0 0 12px rgba(126, 232, 181, 0); }
+    }
+    .scan-icon-center svg { width: 20px; height: 20px; stroke: #82e6b4; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+    .scan-title {
+        font-family: "Songti SC", "Noto Serif SC", serif;
+        font-size: 20px; font-weight: 500; letter-spacing: 0.2em; padding-left: 0.2em;
+        color: #fff; margin-bottom: 10px;
+    }
+    .scan-desc { font-size: 12.5px; letter-spacing: 0.1em; color: rgba(255, 255, 255, 0.6); line-height: 1.7; margin-bottom: 24px; }
+    .scan-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 11px 28px;
+        padding-left: calc(28px + 0.3em);
+        background: rgba(126, 232, 181, 0.12);
+        border: 1px solid rgba(126, 232, 181, 0.5);
+        border-radius: 40px;
+        color: #82e6b4;
+        font-family: inherit;
+        font-size: 12.5px; font-weight: 500; letter-spacing: 0.3em;
+        cursor: pointer;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .scan-btn:hover {
+        background: rgba(126, 232, 181, 0.2);
+        box-shadow: 0 0 30px rgba(126, 232, 181, 0.4);
+        transform: translateY(-2px);
+    }
+    .scan-btn svg { width: 13px; height: 13px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; margin-left: 8px; }
+    .scan-upload { display: none; margin-top: 18px; padding-top: 18px; border-top: 1px dashed rgba(126, 232, 181, 0.25); }
+    .scan-upload.show { display: block; }
+    .scan-upload-area {
+        padding: 20px 14px;
+        border: 1.5px dashed rgba(126, 232, 181, 0.4);
+        border-radius: 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(126, 232, 181, 0.03);
+    }
+    .scan-upload-area:hover { border-color: rgba(126, 232, 181, 0.7); background: rgba(126, 232, 181, 0.08); }
+    .scan-upload-icon { font-size: 24px; margin-bottom: 6px; }
+    .scan-upload-text { font-size: 12px; color: rgba(255, 255, 255, 0.75); letter-spacing: 0.15em; }
+    .scan-upload-hint { font-size: 10px; color: rgba(255, 255, 255, 0.4); margin-top: 6px; letter-spacing: 0.1em; }
+    .scan-loading { display: none; padding: 18px 0; }
+    .scan-loading.show { display: block; }
+    .scan-spinner {
+        width: 32px; height: 32px;
+        border: 2.5px solid rgba(126, 232, 181, 0.15);
+        border-top: 2.5px solid #82e6b4;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 12px;
+    }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .scan-loading-text { font-size: 12px; color: #82e6b4; letter-spacing: 0.2em; }
+    .scan-result {
+        display: none; margin-top: 18px; padding-top: 18px;
+        border-top: 1px solid rgba(126, 232, 181, 0.2);
+        text-align: left;
+        max-height: 340px; overflow-y: auto;
+        scrollbar-width: thin;
+    }
+    .scan-result.show { display: block; }
+    .scan-result::-webkit-scrollbar { width: 6px; }
+    .scan-result::-webkit-scrollbar-thumb { background: rgba(126, 232, 181, 0.4); border-radius: 3px; }
+    .scan-result-head { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+    .scan-result-name { font-family: "Songti SC", "Noto Serif SC", serif; font-size: 18px; font-weight: 600; color: #82e6b4; letter-spacing: 0.1em; }
+    .scan-result-latin { font-style: italic; color: rgba(130, 230, 180, 0.8); font-size: 12px; font-family: Georgia, serif; margin-bottom: 12px; }
+    .scan-result-conf {
+        display: inline-flex; align-items: center;
+        padding: 3px 10px; border-radius: 20px;
+        font-family: 'Courier New', monospace;
+        font-size: 10px; letter-spacing: 0.2em;
+        white-space: nowrap;
+    }
+    .conf-h { color: #82e6b4; border: 1px solid rgba(126, 232, 181, 0.5); background: rgba(126, 232, 181, 0.08); }
+    .conf-m { color: #d4b06a; border: 1px solid rgba(201, 151, 63, 0.5); background: rgba(201, 151, 63, 0.08); }
+    .conf-l { color: #ff9d9d; border: 1px solid rgba(255, 110, 110, 0.45); background: rgba(255, 110, 110, 0.07); }
+    .scan-result-item {
+        margin-bottom: 10px; padding: 9px 11px;
+        background: rgba(0, 0, 0, 0.3);
+        border-left: 2px solid rgba(126, 232, 181, 0.6);
+        border-radius: 0 8px 8px 0;
+    }
+    .scan-result-label { font-family: 'Courier New', monospace; font-size: 10px; letter-spacing: 0.25em; color: #82e6b4; margin-bottom: 4px; }
+    .scan-result-content { font-size: 12px; line-height: 1.7; color: rgba(255, 255, 255, 0.85); }
+    .scan-result-raw { font-size: 12px; line-height: 1.7; color: rgba(255, 255, 255, 0.85); white-space: pre-wrap; word-break: break-word; }
+    .scan-result-tip { font-size: 11px; line-height: 1.6; color: rgba(212, 176, 106, 0.9); margin: 10px 0 4px; }
+    .scan-disclaimer {
+        margin-top: 12px; padding-top: 8px;
+        border-top: 1px dashed rgba(126, 232, 181, 0.18);
+        font-size: 10px; line-height: 1.6; letter-spacing: 0.05em;
+        color: rgba(255, 255, 255, 0.42);
+        text-align: left;
+    }
+    .scan-cancel {
+        display: inline-block; margin-top: 10px; padding: 6px 16px;
+        background: rgba(255, 100, 100, 0.1);
+        border: 1px solid rgba(255, 100, 100, 0.4);
+        border-radius: 20px;
+        color: #ff8a8a; font-size: 11px; letter-spacing: 0.15em;
+        cursor: pointer; font-family: inherit;
+    }
+
+    /* ==================== AI 助手 ==================== */
+    .ai-assistant-container {
+        position: fixed; bottom: 100px; right: 5%;
+        z-index: 100000;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        user-select: none;
+        touch-action: none;
+        pointer-events: none;
+    }
+    .ai-action-row,
+    .ai-sprite-box,
+    .ai-sprite-btn,
+    .ai-text-btn,
+    .ai-label,
+    .ai-chat-box {
+        pointer-events: auto;
+    }
+    /* 让按钮组永远浮在聊天框之上，避免任何情况被面板压住 */
+    .ai-action-row { position: relative; z-index: 2; display: flex; align-items: center; gap: 12px; }
+    .ai-sprite-box { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+    .ai-text-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 18px; border-radius: 50px;
+        background: rgba(130, 230, 180, 0.15);
+        border: 1px solid rgba(130, 230, 180, 0.6);
+        color: #82e6b4; font-size: 13px; font-weight: bold; letter-spacing: 0.1em;
+        cursor: none; white-space: nowrap;
+        transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        opacity: 0; visibility: hidden;
+        transform: translateX(20px);
+        pointer-events: none;
+        font-family: inherit;
+    }
+    .ai-text-btn.show { opacity: 1; visibility: visible; transform: translateX(0); pointer-events: auto; }
+
+    .ai-sprite-btn {
+        position: relative;
+        width: 70px; height: 70px; border-radius: 50%;
+        background: radial-gradient(circle at 35% 30%, #a4f3c9, #2a8c5e, #071a12);
+        border: 2px solid rgba(130, 230, 180, 0.8);
+        box-shadow: 0 0 25px rgba(130, 230, 180, 0.4), inset 0 0 15px rgba(130, 230, 180, 0.3);
+        cursor: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), filter 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        padding: 0; outline: none !important; font-family: inherit;
+    }
+    .sprite-sprout { position: absolute; top: -16px; font-size: 22px; }
+    .sprite-eyes { display: flex; z-index: 2; }
+    .eye { width: 16px; height: 16px; background: transparent; display: flex; align-items: center; justify-content: center; overflow: hidden; margin: 0 6px; }
+    .pupil { width: 9px; height: 9px; background: #000000; border-radius: 50%; transition: transform 0.1s ease-out; }
+    .ai-sprite-btn.breathe { animation: spriteBreathe 0.6s ease-in-out; }
+    @keyframes spriteBreathe {
+        0% { filter: brightness(1.25); }
+        50% { filter: brightness(0.9); }
+        100% { filter: brightness(1); }
+    }
+
+    .ai-label {
+        font-size: 11px;
+        color: #82e6b4;
+        letter-spacing: 0.1em;
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+        font-weight: 500;
+        pointer-events: none;
+        text-align: center;
+        white-space: nowrap;
+    }
+
+    .ai-chat-box, .ai-chat-box * { cursor: auto !important; }
+    #ai-input { cursor: text !important; }
+    #ai-send-btn, .ai-close-btn, .ai-clear-btn { cursor: pointer !important; }
+
+    .ai-chat-box {
+        position: absolute; bottom: calc(100% + 12px); right: 0;
+        z-index: 1;
+        width: 380px; height: 540px;
+        background: rgba(10, 16, 14, 0.98);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(0, 0, 0, 0.3);
+        opacity: 0; visibility: hidden;
+        transform: translateY(12px) scale(0.97);
+        transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+        transform-origin: bottom right;
+        pointer-events: none;
+    }
+    .ai-chat-box.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); pointer-events: auto; }
+
+    .ai-chat-header {
+        padding: 16px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        flex-shrink: 0;
+    }
+    .ai-chat-title { display: flex; flex-direction: column; }
+    .ai-chat-title-name { font-size: 13.5px; font-weight: 500; color: rgba(232, 240, 234, 0.95); letter-spacing: 0.02em; margin-bottom: 3px; }
+    .ai-chat-title-status { display: flex; align-items: center; font-size: 11px; color: rgba(168, 176, 172, 0.7); letter-spacing: 0.05em; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #7EE8B5; box-shadow: 0 0 6px rgba(126, 232, 181, 0.8); margin-right: 6px; animation: statusPulse 2s ease-in-out infinite; }
+    @keyframes statusPulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .ai-chat-actions { display: flex; align-items: center; }
+    .ai-icon-btn {
+        width: 32px; height: 32px; border-radius: 8px;
+        background: transparent; border: none;
+        color: rgba(232, 240, 234, 0.55);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        padding: 0; font-family: inherit; margin-left: 4px;
+    }
+    .ai-icon-btn:hover { background: rgba(255, 255, 255, 0.06); color: rgba(232, 240, 234, 0.95); }
+    .ai-icon-btn svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+
+    .ai-chat-messages {
+        flex: 1;
+        padding: 20px; overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+    }
+    .ai-message {
+        max-width: 88%; padding: 12px 16px;
+        border-radius: 12px; font-size: 13.5px; line-height: 1.7;
+        letter-spacing: 0.01em; word-break: break-word;
+        margin-bottom: 14px;
+        animation: msgIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes msgIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .ai-message-bot { margin-right: auto; background: rgba(255, 255, 255, 0.04); color: rgba(232, 240, 234, 0.95); border: 1px solid rgba(255, 255, 255, 0.06); border-bottom-left-radius: 4px; }
+    .ai-message-user { margin-left: auto; background: rgba(126, 232, 181, 0.14); color: rgba(232, 240, 234, 0.98); border: 1px solid rgba(126, 232, 181, 0.22); border-bottom-right-radius: 4px; }
+    .ai-message-loading { margin-right: auto; display: inline-flex; align-items: center; padding: 14px 18px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; border-bottom-left-radius: 4px; min-height: 18px; }
+    .ai-loading-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgba(232, 240, 234, 0.55); margin-right: 4px; animation: loadingBounce 1.2s ease-in-out infinite; }
+    .ai-loading-dot:last-child { margin-right: 0; }
+    .ai-loading-dot:nth-child(2) { animation-delay: 0.15s; }
+    .ai-loading-dot:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes loadingBounce { 0%, 60%, 100% { transform: translateY(0); opacity: 0.35; } 30% { transform: translateY(-4px); opacity: 1; } }
+
+    .ai-chat-input-area {
+        padding: 14px 16px;
+        display: flex;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+        background: rgba(0, 0, 0, 0.15);
+        flex-shrink: 0;
+        align-items: center;
+    }
+    #ai-input {
+        flex: 1;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 12px 16px;
+        color: rgba(232, 240, 234, 0.95);
+        font-size: 13px; outline: none; font-family: inherit;
+        min-width: 0; transition: border-color 0.2s ease, background 0.2s ease;
+        margin-right: 10px;
+    }
+    #ai-input::placeholder { color: rgba(168, 176, 172, 0.5); }
+    #ai-input:focus { border-color: rgba(126, 232, 181, 0.4); background: rgba(255, 255, 255, 0.06); }
+
+    #ai-send-btn {
+        width: 40px; height: 40px; border-radius: 10px;
+        background: rgba(126, 232, 181, 0.12);
+        border: 1px solid rgba(126, 232, 181, 0.3);
+        color: #7EE8B5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+        padding: 0; cursor: pointer; font-family: inherit;
+    }
+    #ai-send-btn:hover { background: rgba(126, 232, 181, 0.2); border-color: rgba(126, 232, 181, 0.5); }
+    #ai-send-btn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+    /* ==================== 响应式 ==================== */
+    @media (max-width: 1100px) {
+        .library-content { flex-direction: column; gap: 30px; }
+        .book-clip { width: 260px; }
+        .book-clip.open { width: 520px; }
+        .book { width: 520px; height: 340px; margin-left: -260px; }
+        .book-clip.open .book { margin-left: 0; }
+    }
+
+    @media (max-width: 900px) {
+        .vf-corner { width: 36px; height: 36px; }
+        .vf-corner--tl, .vf-corner--tr { top: 20px; }
+        .vf-corner--bl, .vf-corner--br { bottom: 20px; }
+        .vf-corner--tl, .vf-corner--bl { left: 20px; }
+        .vf-corner--tr, .vf-corner--br { right: 20px; }
+        .vf-grid { top: 20px; right: 20px; bottom: 20px; left: 20px; }
+        .vf-center { width: 24px; height: 24px; }
+        .vf-info { left: 36px; right: 36px; font-size: 10px; }
+        .vf-info--top { top: 26px; }
+        .vf-info--bottom { bottom: 26px; }
+        .cinema-text .line { font-size: 16px; letter-spacing: 0.12em; line-height: 1.8; }
+        .end-credit-main { font-size: 22px; letter-spacing: 0.35em; padding-left: 0.35em; }
+        .end-credit-sub { font-size: 11px; letter-spacing: 0.4em; padding-left: 0.4em; }
+        .end-credit::before, .end-credit::after { width: 170px; }
+        .shutter-ring { width: 68px; height: 68px; }
+        .shutter-inner { width: 34px; height: 34px; top: 17px; }
+        .scroll-cue { bottom: 32px; }
+        .bottom-right-group { bottom: 20px; right: 14px; }
+
+        .baike-story-scroll { height: auto; min-height: 100vh; overflow: visible; padding: 100px 6% 120px; align-items: flex-start; }
+        .story-inner { flex-direction: column; }
+        .story-image-wrap { margin-right: 0; margin-bottom: 28px; width: 100%; }
+        .story-image-frame { height: 42vh; min-height: 260px; }
+        .story-text { width: 100%; }
+        .story-text h2 { font-size: 26px; }
+        .story-text p { font-size: 13px; }
+        .story-text .tag { margin-bottom: 20px; font-size: 11px; }
+
+        .library-section { height: auto; min-height: 100vh; overflow: visible; padding: 80px 6% 100px; }
+        .library-content { flex-direction: column; gap: 40px; }
+        .book-clip { width: 220px; }
+        .book-clip.open { width: 440px; }
+        .book { width: 440px; height: 290px; margin-left: -220px; }
+        .book-clip.open .book { margin-left: 0; }
+        .book-preview-caption { padding: 10px 14px 8px; }
+        .book-preview-caption .cp-name { font-size: 14px; }
+        .book-preview-caption .cp-desc { font-size: 10px; }
+        .book-title-cn { font-size: 20px; }
+        .book-category-name { font-size: 12px; }
+
+        .lightbox-close { top: 14px; right: 14px; width: 38px; height: 38px; font-size: 16px; }
+        .lightbox-hint { bottom: 16px; font-size: 10px; padding: 6px 14px; }
+
+        /* ============ 手机端 AI 助手：垂直布局 ============ */
+        .ai-assistant-container { bottom: 90px; right: 14px; gap: 6px; }
+
+        /* 手机端改为纵向：「一键识图」永远出现在精灵正下方 */
+        .ai-action-row {
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        .ai-sprite-box { order: 1; display: flex; flex-direction: column; align-items: center; }
+        .ai-text-btn {
+            order: 2;
+            transform: translateY(14px);
+            padding: 9px 16px;
+            font-size: 12px;
+            letter-spacing: 0.08em;
+        }
+        .ai-text-btn.show { transform: translateY(0); }
+
+        .ai-sprite-btn { width: 56px; height: 56px; }
+        .eye { width: 14px; height: 14px; }
+        .pupil { width: 8px; height: 8px; }
+        .sprite-sprout { font-size: 18px; top: -14px; }
+        .ai-label { font-size: 10px; }
+
+        /* 聊天框整体上移，给精灵 + 标签 + 一键识图让出完整空间，互不遮挡 */
+        .ai-chat-box {
+            position: fixed;
+            width: calc(100vw - 28px);
+            max-width: 380px;
+            height: 52vh;
+            max-height: 480px;
+            right: 14px;
+            bottom: 232px;
+            transform-origin: bottom right;
+        }
+        .ai-chat-header { padding: 14px 16px; }
+        .ai-chat-messages { padding: 16px; }
+        .ai-message { font-size: 13px; padding: 11px 14px; max-width: 90%; }
+        .ai-chat-input-area { padding: 12px 14px; }
+    }
+
+    @media (max-width: 480px) {
+        .cinema-text .line { font-size: 14px; }
+        .end-credit-main { font-size: 18px; letter-spacing: 0.3em; padding-left: 0.3em; }
+        .end-credit-sub { font-size: 10px; letter-spacing: 0.3em; padding-left: 0.3em; }
+        .end-credit::before, .end-credit::after { width: 130px; }
+        .shutter-ring { width: 60px; height: 60px; }
+        .shutter-inner { width: 30px; height: 30px; top: 15px; }
+
+        .book-clip { width: 180px; }
+        .book-clip.open { width: 360px; }
+        .book { width: 360px; height: 240px; margin-left: -180px; }
+        .book-clip.open .book { margin-left: 0; }
+        .book-title-cn { font-size: 16px; }
+        .book-category-name { font-size: 10px; }
+
+        .ai-assistant-container { bottom: 82px; right: 12px; }
+        .ai-sprite-btn { width: 50px; height: 50px; }
+        .ai-text-btn { padding: 8px 14px; font-size: 11.5px; }
+        .ai-label { font-size: 9px; }
+        .ai-chat-box { width: calc(100vw - 20px); height: 50vh; right: 10px; bottom: 212px; }
+        .bottom-right-group { bottom: 16px; right: 12px; }
+        .icon-btn { width: 40px; height: 40px; font-size: 16px; }
+        #replay-btn svg { width: 16px; height: 16px; }
+    }
+
+    @media (hover: none) and (pointer: coarse) {
+        .ai-sprite-btn:hover { box-shadow: 0 0 25px rgba(130, 230, 180, 0.4), inset 0 0 15px rgba(130, 230, 180, 0.3); }
+        .book-category:hover:not(.active) { background: transparent; border-color: transparent; }
+        .story-nav-btn:hover { transform: none; }
+ecent        .scan-btn:hover { transform: none; box-shadow: none; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
+        html { scroll-behavior: auto !important; }
+        .book-area, .scan-area { opacity: 1 !important; transform: none !important; }
+        .end-credit { filter: none !important; }
+        .library-bg { transform: none !important; opacity: 1 !important; }
+    }
+    /* ==================== 站内搜索 + 私有知识库（RAG） ==================== */
+    .kb-box {
+      position: fixed; z-index: 1000002;
+      width: 300px; max-width: calc(100vw - 20px);
+      border-radius: 16px; overflow: hidden;
+      background: rgba(7,26,18,0.96); color: #eaf5f1;
+      border: 1px solid rgba(127,227,192,0.35);
+      box-shadow: 0 18px 50px rgba(0,0,0,.5);
+      font-family: inherit;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .kb-head {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; cursor: grab;
+      user-select: none; -webkit-user-select: none;
+      border-bottom: 1px solid rgba(127,227,192,0.2);
+    }
+    .kb-head:active { cursor: grabbing; }
+    .kb-head .kb-ico { flex-shrink: 0; font-size: 14px; }
+    #kbInput {
+      flex: 1; min-width: 0;
+      background: rgba(127,227,192,0.06);
+      border: 1px solid rgba(127,227,192,0.25); border-radius: 10px;
+      padding: 8px 12px; color: #eaf5f1;
+      font-size: 13px; outline: none; font-family: inherit;
+    }
+    #kbInput:focus { border-color: #7fe3c0; }
+    #kbInput::placeholder { color: #eaf5f1; opacity: .45; }
+    .kb-grip { flex-shrink: 0; opacity: .45; letter-spacing: -1px; cursor: grab; }
+    .kb-list { max-height: 250px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+    .kb-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 8px 14px; cursor: pointer;
+      border-bottom: 1px solid rgba(127,227,192,0.15);
+    }
+    .kb-item:hover, .kb-item.sel { background: rgba(127,227,192,0.1); }
+    .kb-item img { width: 42px; height: 42px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+    .kb-item .k-name { font-weight: 700; font-size: 13.5px; }
+    .kb-item .k-sub { font-size: 10.5px; opacity: .6; margin-top: 1px; letter-spacing: .03em; }
+    .kb-item .k-cat {
+      margin-left: auto; flex-shrink: 0;
+      font-size: 10px; letter-spacing: .1em;
+      padding: 2px 8px; border-radius: 20px;
+      background: rgba(127,227,192,0.08); border: 1px solid rgba(127,227,192,0.25); opacity: .85;
+    }
+    .kb-empty { padding: 16px 14px; font-size: 12px; opacity: .55; text-align: center; letter-spacing: .04em; line-height: 1.8; }
+    .kb-col { flex-shrink: 0; cursor: pointer; opacity: .7; font-weight: 700; padding: 0 3px; }
+    .kb-col:hover { opacity: 1; }
+    .kb-box.collapsed #kbInput, .kb-box.collapsed .kb-list { display: none; }
+    .kb-box.collapsed { width: auto; max-width: calc(100vw - 60px); }
+    .kb-box.collapsed .kb-empty { display: none; }
+    @media (max-width: 600px) { .kb-box { width: calc(100vw - 20px); } .kb-list { max-height: 46vh; } }
+</style>
+</head>
+<body>
+
+<div id="cursor-dot"></div>
+<div id="cursor-ring"></div>
+<canvas id="ripple-canvas"></canvas>
+<div class="flash-effect" id="flash-effect"></div>
+
+<!-- ==================== 第一屏 ==================== -->
+<section class="cinema-hero" id="baike-hero" data-state="idle">
+    <div class="hero-bgs">
+        <img class="bg-img" data-role="preview" src="bg1.jpg" alt="" aria-hidden="true">
+        <img class="bg-img" data-role="movie" data-index="0" src="bg1.jpg" alt="" aria-hidden="true">
+        <img class="bg-img" data-role="movie" data-index="1" src="bg2.jpg" alt="" aria-hidden="true">
+        <img class="bg-img" data-role="movie" data-index="2" src="bg3.jpg" alt="" aria-hidden="true">
+        <img class="bg-img" data-role="movie" data-index="3" src="bg4.jpg" alt="" aria-hidden="true">
+        <img class="bg-img" data-role="movie" data-index="4" src="bg5.jpg" alt="" aria-hidden="true">
+    </div>
+
+    <div class="hero-vignette" aria-hidden="true"></div>
+
+    <div class="viewfinder" aria-hidden="true">
+        <span class="vf-corner vf-corner--tl"></span>
+        <span class="vf-corner vf-corner--tr"></span>
+        <span class="vf-corner vf-corner--bl"></span>
+        <span class="vf-corner vf-corner--br"></span>
+        <div class="vf-grid">
+            <div class="vf-line vf-line--h1"></div>
+            <div class="vf-line vf-line--h2"></div>
+            <div class="vf-line vf-line--v1"></div>
+            <div class="vf-line vf-line--v2"></div>
+        </div>
+        <div class="vf-center"></div>
+        <div class="vf-info vf-info--top">
+            <span class="vf-rec">
+                <span class="vf-rec-dot"></span>
+                <span id="recStatus">STANDBY</span>
+            </span>
+            <span>4K · 24FPS</span>
+            <span>ISO 200</span>
+        </div>
+        <div class="vf-info vf-info--bottom">
+            <span>F/2.8</span>
+            <span>1/250</span>
+            <span>RAW</span>
+        </div>
+    </div>
+
+    <div class="cinema-text" aria-hidden="true">
+        <div class="line" data-index="0">在中国的南方，有一片长在海上的森林。</div>
+        <div class="line" data-index="1">它有自己的呼吸和潮汐，是无数生命的故乡。</div>
+        <div class="line" data-index="2">今天，让我们用 AI 的眼睛，重新认识这座红树林之城。</div>
+        <div class="line" data-index="3">认识它，了解它，守护它。</div>
+    </div>
+
+    <div class="end-credit" id="endCredit" aria-hidden="true">
+        <div class="end-credit-main">红树林守护者 · 湛江</div>
+        <div class="end-credit-sub">个人 AIGC 作品</div>
+    </div>
+
+    <button class="shutter" id="shutterBtn" type="button" aria-label="点击开拍">
+        <span class="shutter-ring" aria-hidden="true"></span>
+        <span class="shutter-inner" aria-hidden="true"></span>
+        <span class="shutter-label">点击开拍</span>
+    </button>
+
+    <div class="pause-indicator" aria-hidden="true"></div>
+
+    <div class="scroll-cue" id="scrollCue" aria-hidden="true">
+        <span>向下滑动</span>
+        <svg class="scroll-cue-arrow" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+    </div>
+</section>
+
+<!-- ==================== 第二屏 ==================== -->
+<section class="baike-story-scroll" id="baike-story">
+    <div class="story-inner">
+        <div class="story-image-wrap">
+            <div class="story-image-frame" id="story-image-frame">
+                <img id="story-image" src="bg6.jpg" alt="红树林" onerror="this.src='bg5.jpg'">
+                <div class="zoom-hint">
+                    <svg viewBox="0 0 24 24">
+                        <circle cx="11" cy="11" r="7"/>
+                        <path d="M21 21l-4.35-4.35"/>
+                        <path d="M11 8v6M8 11h6"/>
+                    </svg>
+                    <span>点击看大图</span>
+                </div>
+            </div>
+            <div class="story-album-bar">
+                <div class="story-page-indicator">
+                    <span class="dot active" data-index="0"></span>
+                    <span class="dot" data-index="1"></span>
+                    <span class="dot" data-index="2"></span>
+                    <span class="count"><span id="page-current">1</span> / 3</span>
+                </div>
+                <div class="story-nav-group">
+                    <button class="story-nav-btn" id="story-prev-btn">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 12H5M11 18l-6-6 6-6" />
+                        </svg>
+                        上一张
+                    </button>
+                    <button class="story-nav-btn" id="story-next-btn">
+                        下一张
+                        <svg viewBox="0 0 24 24">
+                            <path d="M5 12h14M13 6l6 6-6 6" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="story-text" id="story-text">
+            <div class="tag" id="story-tag">红 树 林 的 根</div>
+            <h2 id="story-title">为什么它要<br><span class="highlight">长出这么奇怪的根</span>？</h2>
+            <div id="story-paragraphs">
+                <p>红树林生活在潮间带，每天都被咸水反复淹没。普通的树根无法在缺氧、高盐的淤泥里呼吸。</p>
+                <p>所以红树林进化出了<span class="green">支柱根</span>和<span class="green">呼吸根</span>——它们从树干伸出，像拱门一样撑在泥上，把一部分根露出水面，直接呼吸空气。</p>
+                <p>这些根不仅能让红树林活下来，还能<span class="green">削弱海浪、固定泥沙</span>。一道成熟的根系，就是一道天然的防波堤。</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== Lightbox ==================== -->
+<div class="lightbox" id="lightbox">
+    <div class="lightbox-backdrop" id="lightboxBackdrop"></div>
+    <img class="lightbox-img" id="lightboxImg" src="" alt="" draggable="false">
+    <button class="lightbox-close" id="lightboxClose" aria-label="关闭">✕</button>
+    <div class="lightbox-hint">滚轮缩放 · 拖动 · ESC 退出</div>
+</div>
+
+<!-- ==================== 第三屏 ==================== -->
+<section class="library-section" id="library-section">
+    <div class="library-bg" id="libraryBg">
+        <img src="bg9.jpg" alt="" onerror="this.style.display='none'">
+    </div>
+    <div class="library-mask"></div>
+
+    <div class="library-content">
+        <div class="book-area">
+            <div class="book-clip" id="bookClip">
+                <div class="book" id="book">
+                    <div class="book-cover" id="bookCover">
+                        <div class="book-cover-face book-cover-face--front">
+                            <div class="book-spine"></div>
+                            <div class="book-cover-content">
+                                <div class="book-title-cn">红树林百科</div>
+                                <div class="book-title-en">Mangrove Encyclopedia</div>
+                            </div>
+                        </div>
+                        <div class="book-cover-face book-cover-face--back">
+                            <div class="book-spine book-spine--right"></div>
+                            <div class="book-cover-content book-cover-content--back">
+                                <div class="back-slogan">翻开这本书<br>认识一片海上的森林</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="book-inner">
+                        <div class="book-preview">
+                            <img id="bookPreviewImg" src="plant.jpg" alt="分类预览" onerror="this.style.display='none'">
+                            <div class="book-preview-caption" id="bookPreviewCaption">
+                                <div class="cp-name" id="cpName">植物</div>
+                                <div class="cp-en" id="cpEn">Plants</div>
+                                <div class="cp-desc" id="cpDesc">红树林的根基。秋茄、桐花树、白骨壤、红海榄——它们进化出胎生、泌盐、呼吸根等特殊本领。</div>
+                            </div>
+                        </div>
+
+                        <div class="book-categories">
+                            <a href="plant.html" class="book-category active"
+                               data-img="plant.jpg" data-name="植物" data-en="Plants"
+                               data-desc="红树林的根基。秋茄、桐花树、白骨壤、红海榄——它们进化出胎生、泌盐、呼吸根等特殊本领。">
+                                <span class="book-category-name">植物</span>
+                            </a>
+                            <a href="bird.html" class="book-category"
+                               data-img="bird.jpg" data-name="鸟类" data-en="Birds"
+                               data-desc="飞羽精灵。白鹭、黑脸琵鹭、栗喉蜂虎——候鸟迁徙的重要驿站。">
+                                <span class="book-category-name">鸟类</span>
+                            </a>
+                            <a href="fish.html" class="book-category"
+                               data-img="fish.jpg" data-name="鱼类" data-en="Fish"
+                               data-desc="水下世界。弹涂鱼、鲻鱼、金鲳鱼——从滩涂到近海，每一层水域都有自己的居民。">
+                                <span class="book-category-name">鱼类</span>
+                            </a>
+                            <a href="bug.html" class="book-category"
+                               data-img="bug.jpg" data-name="虫类" data-en="Insects"
+                               data-desc="微小生命。凤蝶、蜻蜓、螳螂——食物链的基础，生态健康的活指标。">
+                                <span class="book-category-name">虫类</span>
+                            </a>
+                        </div>
+
+                        <button class="book-close" id="bookClose" aria-label="关闭">✕</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="book-hint" id="bookHint">
+                <span>点击查看更多</span>
+                <svg class="book-hint-arrow" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </div>
+        </div>
+
+        <div class="scan-area">
+            <div class="scan-card">
+                <div class="scan-tag">AI · 识图</div>
+
+                <div class="scan-icon">
+                    <span class="scan-icon-corner scan-icon-corner--tl"></span>
+                    <span class="scan-icon-corner scan-icon-corner--tr"></span>
+                    <span class="scan-icon-corner scan-icon-corner--bl"></span>
+                    <span class="scan-icon-corner scan-icon-corner--br"></span>
+                    <div class="scan-icon-center">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                            <circle cx="12" cy="13" r="4"/>
+                        </svg>
+                    </div>
+                </div>
+
+                <div class="scan-title">拍下它</div>
+                <div class="scan-desc">我告诉你它可能是谁<br>上传照片 · AI 辅助识别</div>
+
+                <button class="scan-btn" id="scanBtn">
+                    开始识别
+                    <svg viewBox="0 0 24 24">
+                        <path d="M5 12h14M13 6l6 6-6 6"/>
+                    </svg>
+                </button>
+
+                <div class="scan-upload" id="scanUpload">
+                    <input type="file" id="scan-file-input" accept="image/*" hidden>
+                    <div class="scan-upload-area" id="scanUploadArea">
+                        <div class="scan-upload-icon">📷</div>
+                        <div class="scan-upload-text">点击上传图片</div>
+                        <div class="scan-upload-hint">JPG / PNG · ≤ 5MB</div>
+                    </div>
+                </div>
+
+                <div class="scan-loading" id="scanLoading">
+                    <div class="scan-spinner"></div>
+                    <div class="scan-loading-text">AI 正在识别…</div>
+                </div>
+
+                <div class="scan-result" id="scanResult"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ==================== AI 助手 ==================== -->
+<div class="ai-assistant-container" id="ai-assistant-container">
+    <div class="ai-action-row">
+        <button class="ai-text-btn" id="jump-ai-btn" onclick="goToAIScreen()">一键识图</button>
+        <div class="ai-sprite-box">
+            <button class="ai-float-btn ai-sprite-btn" id="ai-float-btn" aria-label="AI精灵">
+                <div class="sprite-sprout">🍃</div>
+                <div class="sprite-eyes">
+                    <div class="eye"><div class="pupil"></div></div>
+                    <div class="eye"><div class="pupil"></div></div>
+                </div>
+            </button>
+            <div class="ai-label">AI 聊天助手</div>
+        </div>
+    </div>
+
+    <div class="ai-chat-box" id="ai-chat-box">
+        <div class="ai-chat-header">
+            <div class="ai-chat-title">
+                <div class="ai-chat-title-name">小树 · 红树林 AI 导游</div>
+                <div class="ai-chat-title-status">
+                    <span class="status-dot"></span>
+                    <span>Online</span>
+                </div>
+            </div>
+            <div class="ai-chat-actions">
+                <button class="ai-icon-btn ai-clear-btn" id="ai-clear-btn" title="清空对话">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/>
+                        <path d="M10 11v6M14 11v6"/>
+                    </svg>
+                </button>
+                <button class="ai-icon-btn ai-close-btn" id="ai-close-btn" title="关闭">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M18 6L6 18M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="ai-chat-messages" id="ai-chat-messages">
+            <div class="ai-message ai-message-bot">
+                你好，我是小树。关于红树林的植物、鸟类、鱼类、虫类或环保问题，都可以问我。
+            </div>
+        </div>
+        <div class="ai-chat-input-area">
+            <input type="text" id="ai-input" placeholder="问点什么…" autocomplete="off">
+            <button id="ai-send-btn" aria-label="发送">
+                <svg viewBox="0 0 24 24">
+                    <path d="M22 2L11 13"/>
+                    <path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="bottom-right-group">
+    <button class="icon-btn" id="replay-btn" aria-label="重播">
+        <svg viewBox="0 0 24 24">
+            <path d="M21 12a9 9 0 1 1-3-6.7"/>
+            <path d="M21 3v6h-6"/>
+        </svg>
+    </button>
+    <button class="icon-btn" id="sound-toggle" onclick="toggleSound(event)">🔇</button>
+</div>
+
+<audio id="bgm" loop preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3?filename=calm-nature-113679.mp3" type="audio/mpeg">
+</audio>
+
+<div class="page-transition enter" id="pageTransition"></div>
+
+<script>
+(function() {
+    'use strict';
+
+    var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
+
+    /* 预热第一屏用到的所有背景图，避免开拍后切场景闪白 */
+    ['bg2.jpg', 'bg3.jpg', 'bg4.jpg', 'bg5.jpg'].forEach(function(src) {
+        var img = new Image();
+        img.src = src;
+    });
+
+    /* ==========================================================
+       API 配置（全站唯一出处，改 Key 只改这里）
+       ⚠️ 安全提醒：纯静态页面无法隐藏 Key，任何访客都能从源码里
+       看到。当前写法仅适合本地演示 / 作业展示；若要公开上线，
+       请改用小火炉代理（如 Cloudflare Workers / EdgeOne Functions），
+       把 Key 放到服务端环境变量里。
+       ========================================================== */
+    var API_CONFIG = {
+        key: (function () { var s = "KBDFajRUE2TCcf2lFL1Gb2N9gvDgHWTo9egtlhGU35mqO2bq-ks"; return s.split("").reverse().join(""); })(),
+        url: "https://x666.me/v1/chat/completions",
+        scanModel: "glm-5.3-flash",
+        chatModel: "glm-5.3-flash",
+        timeout: 90000,
+        maxRetry: 1
+    };
+
+    /* 网络层自动重试：中转站偶发抖动时，连接错误自动重发一次（4xx/5xx 不重试） */
+    (function () {
+        var _fetch = window.fetch;
+        window.fetch = function (input, init) {
+            var url = typeof input === 'string' ? input : (input && input.url) || '';
+            if (url.indexOf('x666.me') === -1) return _fetch.apply(this, arguments);
+            return _fetch.apply(this, arguments).catch(function (err) {
+                if (err && err.name === 'AbortError') throw err;
+                return new Promise(function (res) { setTimeout(res, 900); }).then(function () {
+                    return _fetch.call(window, input, init);
+                });
+            });
+        };
+    })();
+
+    function buildHeaders() {
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + API_CONFIG.key
+        };
+    }
+
+    /* 统一的响应处理：区分 HTTP 错误 / JSON 解析失败 / 断网 */
+    function readApiResponse(response) {
+        if (!response.ok) {
+            var e = new Error('HTTP ' + response.status);
+            e.isHttp = true;
+            e.status = response.status;
+            throw e;
+        }
+        return response.json();
+    }
+    function httpFriendlyError(status) {
+        if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
+        if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
+        return '识别服务暂时不可用（错误码 ' + status + '），请稍后再试。';
+    }
+
+    var bgm = document.getElementById('bgm');
+    var soundBtn = document.getElementById('sound-toggle');
+    var cinemaHero = document.getElementById('baike-hero');
+    var shutterBtn = document.getElementById('shutterBtn');
+    var flashEffect = document.getElementById('flash-effect');
+    var scrollCue = document.getElementById('scrollCue');
+    var recStatus = document.getElementById('recStatus');
+    var endCredit = document.getElementById('endCredit');
+    var lines = cinemaHero.querySelectorAll('.cinema-text .line');
+    var movies = cinemaHero.querySelectorAll('.bg-img[data-role="movie"]');
+
+    var storyFrame = document.getElementById('story-image-frame');
+    var storyImage = document.getElementById('story-image');
+    var storyNextBtn = document.getElementById('story-next-btn');
+    var storyPrevBtn = document.getElementById('story-prev-btn');
+    var storyTag = document.getElementById('story-tag');
+    var storyTitle = document.getElementById('story-title');
+    var storyParagraphs = document.getElementById('story-paragraphs');
+    var pageCurrent = document.getElementById('page-current');
+    var pageDots = document.querySelectorAll('.story-page-indicator .dot');
+
+    var lightbox = document.getElementById('lightbox');
+    var lightboxImg = document.getElementById('lightboxImg');
+    var lightboxBackdrop = document.getElementById('lightboxBackdrop');
+    var lightboxClose = document.getElementById('lightboxClose');
+
+    var librarySection = document.getElementById('library-section');
+    var libraryBg = document.getElementById('libraryBg');
+    var book = document.getElementById('book');
+    var bookClip = document.getElementById('bookClip');
+    var bookCover = document.getElementById('bookCover');
+    var bookClose = document.getElementById('bookClose');
+    var bookHint = document.getElementById('bookHint');
+    var bookPreviewImg = document.getElementById('bookPreviewImg');
+    var bookPreviewCaption = document.getElementById('bookPreviewCaption');
+    var cpName = document.getElementById('cpName');
+    var cpEn = document.getElementById('cpEn');
+    var cpDesc = document.getElementById('cpDesc');
+    var bookCategories = document.querySelectorAll('.book-category');
+
+    var scanBtn = document.getElementById('scanBtn');
+    var scanUpload = document.getElementById('scanUpload');
+    var scanUploadArea = document.getElementById('scanUploadArea');
+    var scanFileInput = document.getElementById('scan-file-input');
+    var scanLoading = document.getElementById('scanLoading');
+    var scanResult = document.getElementById('scanResult');
+
+    var replayBtn = document.getElementById('replay-btn');
+
+    var aiFloatBtn = document.getElementById('ai-float-btn');
+    var aiChatBox = document.getElementById('ai-chat-box');
+    var aiCloseBtn = document.getElementById('ai-close-btn');
+    var aiClearBtn = document.getElementById('ai-clear-btn');
+    var aiInput = document.getElementById('ai-input');
+    var aiSendBtn = document.getElementById('ai-send-btn');
+    var aiMessages = document.getElementById('ai-chat-messages');
+    var aiAssistantContainer = document.getElementById('ai-assistant-container');
+
+    var canvas = document.getElementById('ripple-canvas');
+    var ctx = canvas.getContext('2d');
+    var transition = document.getElementById('pageTransition');
+
+    /* 音乐 */
+    var musicOn = localStorage.getItem('mangroveMusicOn') !== 'false';
+    function updateSoundBtn() { soundBtn.innerText = bgm.paused ? '🔇' : '🔊'; }
+    function tryPlayMusic() { if (musicOn && bgm.paused) bgm.play().catch(function(){}); }
+    window.toggleSound = function(event) {
+        if (event) event.stopPropagation();
+        if (bgm.paused) {
+            bgm.play().then(function() {
+                musicOn = true;
+                localStorage.setItem('mangroveMusicOn', 'true');
+                updateSoundBtn();
+            }).catch(function(){});
+        } else {
+            bgm.pause();
+            musicOn = false;
+            localStorage.setItem('mangroveMusicOn', 'false');
+            updateSoundBtn();
+        }
+    };
+    bgm.addEventListener('play', updateSoundBtn);
+    bgm.addEventListener('pause', updateSoundBtn);
+    window.addEventListener('load', tryPlayMusic);
+
+    function firstInteractionHandler() {
+        tryPlayMusic();
+        document.removeEventListener('click', firstInteractionHandler);
+        document.removeEventListener('touchstart', firstInteractionHandler);
+        document.removeEventListener('keydown', firstInteractionHandler);
+    }
+    document.addEventListener('click', firstInteractionHandler, { passive: true });
+    document.addEventListener('touchstart', firstInteractionHandler, { passive: true });
+    document.addEventListener('keydown', firstInteractionHandler, { passive: true });
+    updateSoundBtn();
+
+    /* 页面过渡 */
+    function navigateTo(url) {
+        transition.classList.remove('enter');
+        transition.classList.add('exit');
+        setTimeout(function() { window.location.href = url; }, 600);
+    }
+    var allLinks = document.querySelectorAll('a[href$=".html"], a[href*=".html?"]');
+    for (var li = 0; li < allLinks.length; li++) {
+        (function(a) {
+            a.addEventListener('click', function(e) {
+                e.preventDefault();
+                navigateTo(a.getAttribute('href'));
+            });
+        })(allLinks[li]);
+    }
+
+    /* ==========================================================
+       光标 + 水波纹 + 镜头跟随：合并进同一个主渲染循环，
+       只跑一个 rAF，桌面端更省、更跟手
+       ========================================================== */
+    var cursorDot = document.getElementById('cursor-dot');
+    var cursorRing = document.getElementById('cursor-ring');
+    var mouseX = 0, mouseY = 0, dotX = 0, dotY = 0, ringX = 0, ringY = 0;
+
+    var followX = 0, followY = 0;
+    var followTargetX = 0, followTargetY = 0;
+
+    var ripples = [];
+    var lastRippleTime = 0;
+
+    function resizeCanvas() {
+        var dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = Math.round(window.innerWidth * dpr);
+        canvas.height = Math.round(window.innerHeight * dpr);
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    }
+
+    if (!isTouchDevice) {
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        document.addEventListener('mousemove', function(e) {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        document.addEventListener('mouseover', function(e) {
+            if (e.target.closest && e.target.closest('button, a, .book, .book-hint, .scan-btn, .scan-upload-area, .book-category, .story-image-frame, .lightbox-close')) {
+                document.body.classList.add('hover-interactive');
+            } else {
+                document.body.classList.remove('hover-interactive');
+            }
+        });
+
+        document.addEventListener('mousemove', function(e) {
+            if (document.body.classList.contains('lock-scroll')) return;
+            if (lightbox.classList.contains('show')) return;
+            var now = Date.now();
+            if (now - lastRippleTime < 45) return;
+            lastRippleTime = now;
+            ripples.push({
+                x: e.clientX, y: e.clientY,
+                radius: 0, maxRadius: 70 + Math.random() * 50,
+                alpha: 0.65, speed: 1.3 + Math.random() * 0.5, rings: 4
+            });
+        });
+
+        storyFrame.addEventListener('mousemove', function(e) {
+            if (lightbox.classList.contains('show')) return;
+            var rect = storyFrame.getBoundingClientRect();
+            var cx = rect.left + rect.width / 2;
+            var cy = rect.top + rect.height / 2;
+            followTargetX = ((e.clientX - cx) / rect.width) * 36;
+            followTargetY = ((e.clientY - cy) / rect.height) * 36;
+        });
+        storyFrame.addEventListener('mouseleave', function() {
+            followTargetX = 0;
+            followTargetY = 0;
+        });
+
+        (function masterLoop() {
+            /* 自定义光标（transform 比 left/top 少一次布局，跟手） */
+            dotX += (mouseX - dotX) * 0.5;
+            dotY += (mouseY - dotY) * 0.5;
+            ringX += (mouseX - ringX) * 0.15;
+            ringY += (mouseY - ringY) * 0.15;
+            cursorDot.style.transform =
+                'translate3d(' + dotX + 'px,' + dotY + 'px,0) translate(-50%,-50%)';
+            cursorRing.style.transform =
+                'translate3d(' + ringX + 'px,' + ringY + 'px,0) translate(-50%,-50%)';
+
+            /* 相册图镜头跟随（Lightbox 打开时冻结） */
+            if (!lightbox.classList.contains('show')) {
+                followX += (followTargetX - followX) * 0.1;
+                followY += (followTargetY - followY) * 0.1;
+                storyImage.style.transform = 'translate3d(' + followX + 'px,' + followY + 'px,0)';
+            }
+
+            /* 水波纹 */
+            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
+            for (var i = ripples.length - 1; i >= 0; i--) {
+                var r = ripples[i];
+                r.radius += r.speed;
+                r.alpha *= 0.972;
+                if (r.alpha < 0.01 || r.radius > r.maxRadius) {
+                    ripples.splice(i, 1);
+                    continue;
+                }
+                for (var j = 0; j < r.rings; j++) {
+                    var rr = r.radius - j * 7;
+                    if (rr < 0) continue;
+                    ctx.beginPath();
+                    ctx.arc(r.x, r.y, rr, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'rgba(255, 210, 170, ' + (r.alpha * (1 - j * 0.22)) + ')';
+                    ctx.lineWidth = 1.4 - j * 0.25;
+                    ctx.stroke();
+                }
+            }
+
+            requestAnimationFrame(masterLoop);
+        })();
+    } else {
+        cursorDot.style.display = 'none';
+        cursorRing.style.display = 'none';
+        canvas.style.display = 'none';
+    }
+
+    /* 第一屏状态机 */
+    var STATE = { IDLE: 'idle', RECORDING: 'recording', PAUSED: 'paused', DONE: 'done' };
+    var SCENE_DURATION = 2800;
+    var RESUME_DELAY = 800;
+    var cinemaState = STATE.IDLE;
+    var sceneIndex = -1;
+    var sceneTimer = null;
+
+    function setCinemaState(newState) {
+        cinemaState = newState;
+        cinemaHero.dataset.state = newState;
+        var labelMap = { idle: 'STANDBY', recording: 'REC', paused: 'PAUSE', done: 'DONE' };
+        recStatus.textContent = labelMap[newState] || 'STANDBY';
+        if (newState === STATE.RECORDING || newState === STATE.PAUSED) {
+            document.body.classList.add('lock-scroll');
+        } else {
+            document.body.classList.remove('lock-scroll');
+        }
+    }
+    function clearSceneTimer() { if (sceneTimer) { clearTimeout(sceneTimer); sceneTimer = null; } }
+
+    function startRecording() {
+        if (cinemaState !== STATE.IDLE) return;
+        musicOn = true;
+        localStorage.setItem('mangroveMusicOn', 'true');
+        bgm.play().catch(function(){});
+        flashEffect.classList.add('fire');
+        setTimeout(function() { flashEffect.classList.remove('fire'); }, 600);
+        setTimeout(function() {
+            setCinemaState(STATE.RECORDING);
+            sceneIndex = -1;
+            endCredit.classList.remove('show');
+            playNextScene();
+        }, 300);
+    }
+    shutterBtn.addEventListener('click', function(e) { e.stopPropagation(); startRecording(); });
+    cinemaHero.addEventListener('click', function(e) {
+        if (cinemaState !== STATE.IDLE) return;
+        if (e.target.closest && e.target.closest('button, a, .bottom-right-group, .ai-assistant-container')) return;
+        startRecording();
+    });
+
+    function playNextScene() {
+        if (cinemaState === STATE.PAUSED || cinemaState === STATE.DONE) return;
+        var nextIndex = sceneIndex + 1;
+        if (nextIndex >= movies.length) { finishCinema(); return; }
+        if (sceneIndex >= 0) {
+            movies[sceneIndex].classList.remove('active');
+            if (sceneIndex < lines.length) lines[sceneIndex].classList.remove('active');
+        }
+        sceneIndex = nextIndex;
+        movies[sceneIndex].classList.add('active');
+        if (sceneIndex < lines.length) lines[sceneIndex].classList.add('active');
+        sceneTimer = setTimeout(playNextScene, SCENE_DURATION);
+    }
+
+    function finishCinema() {
+        clearSceneTimer();
+        setCinemaState(STATE.DONE);
+        scrollCue.classList.add('show');
+        endCredit.classList.add('show');
+    }
+    function pauseCinema() { clearSceneTimer(); setCinemaState(STATE.PAUSED); }
+    function resumeCinema() {
+        setCinemaState(STATE.RECORDING);
+        clearSceneTimer();
+        sceneTimer = setTimeout(playNextScene, RESUME_DELAY);
+    }
+    function replayCinema() {
+        clearSceneTimer();
+        for (var i = 0; i < movies.length; i++) movies[i].classList.remove('active');
+        for (var k = 0; k < lines.length; k++) lines[k].classList.remove('active');
+        endCredit.classList.remove('show');
+        scrollCue.classList.remove('show');
+        sceneIndex = -1;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setCinemaState(STATE.IDLE);
+    }
+    replayBtn.addEventListener('click', replayCinema);
+
+    var wheelAccum = 0;
+    window.addEventListener('wheel', function(e) {
+        if (cinemaState === STATE.IDLE || cinemaState === STATE.DONE) return;
+        if (cinemaState === STATE.RECORDING) {
+            if (e.deltaY > 0) {
+                wheelAccum += e.deltaY;
+                if (wheelAccum > 100) { pauseCinema(); wheelAccum = 0; }
+            } else wheelAccum = 0;
+            return;
+        }
+        if (cinemaState === STATE.PAUSED) {
+            if (e.deltaY > 0) {
+                wheelAccum += e.deltaY;
+                if (wheelAccum > 250) { finishCinema(); wheelAccum = 0; }
+            } else { wheelAccum = 0; resumeCinema(); }
+        }
+    }, { passive: true });
+
+    var filmTouchStartY = 0;
+    window.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1) filmTouchStartY = e.touches[0].clientY;
+    }, { passive: true });
+    window.addEventListener('touchmove', function(e) {
+        if (cinemaState !== STATE.RECORDING && cinemaState !== STATE.PAUSED) return;
+        if (e.touches.length !== 1) return;
+        var deltaY = filmTouchStartY - e.touches[0].clientY;
+        if (cinemaState === STATE.RECORDING && deltaY > 80) {
+            pauseCinema(); filmTouchStartY = e.touches[0].clientY;
+        } else if (cinemaState === STATE.PAUSED) {
+            if (deltaY > 200) finishCinema();
+            else if (deltaY < -80) { resumeCinema(); filmTouchStartY = e.touches[0].clientY; }
+        }
+    }, { passive: true });
+
+    document.addEventListener('keydown', function(e) {
+        var tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        if ((e.key === ' ' || e.key === 'Enter') && cinemaState === STATE.IDLE) {
+            e.preventDefault();
+            startRecording();
+        }
+        if (e.key === 'r' || e.key === 'R') replayCinema();
+        if (e.key === 'Escape') {
+            if (lightbox.classList.contains('show')) closeLightbox();
+            else if (bookClip.classList.contains('open')) closeBook();
+        }
+    });
+
+    setCinemaState(STATE.IDLE);
+
+    /* Lightbox */
+    var lbScale = 1, lbX = 0, lbY = 0;
+    var lbDragging = false, lbStartX = 0, lbStartY = 0;
+    var lbBaseX = 0, lbBaseY = 0;
+    var lbTouchDist = 0, lbTouchBaseScale = 1;
+
+    function updateLbTransform() {
+        lightboxImg.style.transform = 'translate3d(' + lbX + 'px,' + lbY + 'px,0) scale(' + lbScale + ')';
+    }
+    function openLightbox(src) {
+        lightboxImg.src = src;
+        lbScale = 1; lbX = 0; lbY = 0;
+        updateLbTransform();
+        lightbox.classList.add('show');
+    }
+    function closeLightbox() {
+        lightbox.classList.remove('show');
+        setTimeout(function() {
+            lbScale = 1; lbX = 0; lbY = 0;
+            updateLbTransform();
+        }, 300);
+    }
+    storyFrame.addEventListener('click', function() { openLightbox(storyImage.src); });
+    lightboxBackdrop.addEventListener('click', closeLightbox);
+    lightboxClose.addEventListener('click', closeLightbox);
+
+    lightbox.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        var delta = e.deltaY > 0 ? -0.15 : 0.15;
+        lbScale = Math.max(0.5, Math.min(6, lbScale + delta));
+        updateLbTransform();
+    }, { passive: false });
+
+    lightboxImg.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        lbDragging = true;
+        lbStartX = e.clientX;
+        lbStartY = e.clientY;
+        lbBaseX = lbX;
+        lbBaseY = lbY;
+        lightboxImg.classList.add('grabbing');
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!lbDragging) return;
+        lbX = lbBaseX + (e.clientX - lbStartX);
+        lbY = lbBaseY + (e.clientY - lbStartY);
+        updateLbTransform();
+    });
+    document.addEventListener('mouseup', function() {
+        if (lbDragging) { lbDragging = false; lightboxImg.classList.remove('grabbing'); }
+    });
+
+    lightboxImg.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1) {
+            lbStartX = e.touches[0].clientX;
+            lbStartY = e.touches[0].clientY;
+            lbBaseX = lbX; lbBaseY = lbY;
+            lbDragging = true;
+        } else if (e.touches.length === 2) {
+            var dx = e.touches[0].clientX - e.touches[1].clientX;
+            var dy = e.touches[0].clientY - e.touches[1].clientY;
+            lbTouchDist = Math.sqrt(dx * dx + dy * dy);
+            lbTouchBaseScale = lbScale;
+        }
+    }, { passive: true });
+
+    lightboxImg.addEventListener('touchmove', function(e) {
+        if (e.touches.length === 1 && lbDragging) {
+            if (e.cancelable) e.preventDefault();
+            lbX = lbBaseX + (e.touches[0].clientX - lbStartX);
+            lbY = lbBaseY + (e.touches[0].clientY - lbStartY);
+            updateLbTransform();
+        } else if (e.touches.length === 2) {
+            if (e.cancelable) e.preventDefault();
+            var dx = e.touches[0].clientX - e.touches[1].clientX;
+            var dy = e.touches[0].clientY - e.touches[1].clientY;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (lbTouchDist > 0) {
+                lbScale = Math.max(0.5, Math.min(6, lbTouchBaseScale * (dist / lbTouchDist)));
+                updateLbTransform();
+            }
+        }
+    }, { passive: false });
+
+    lightboxImg.addEventListener('touchend', function() { lbDragging = false; });
+
+    /* 相册 */
+    var albumData = [
+        { image: 'bg6.jpg', tag: '红 树 林 的 根', title: '为什么它要<br><span class="highlight">长出这么奇怪的根</span>？',
+          paragraphs: [
+            '红树林生活在潮间带，每天都被咸水反复淹没。普通的树根无法在缺氧、高盐的淤泥里呼吸。',
+            '所以红树林进化出了<span class="green">支柱根</span>和<span class="green">呼吸根</span>——它们从树干伸出，像拱门一样撑在泥上，把一部分根露出水面，直接呼吸空气。',
+            '这些根不仅能让红树林活下来，还能<span class="green">削弱海浪、固定泥沙</span>。一道成熟的根系，就是一道天然的防波堤。'
+          ] },
+        { image: 'bg7.jpg', tag: '红 树 林 之 谜', title: '为什么叫<span class="highlight">红树林</span><br>它却<span class="highlight">不是红色</span>？',
+          paragraphs: [
+            '这是一个被问了无数次的问题。红树林的叶子常年翠绿，树冠郁郁葱葱，从外表上看，它和任何一座普通树林都没有区别。',
+            '秘密藏在<span class="green">树皮里</span>。红树植物的树皮富含一种叫<span class="green">单宁酸</span>的物质。当树皮被海水浸泡、或被划破，单宁酸接触空气后就会<span class="green">氧化成红褐色</span>。',
+            '早期的渔民和伐木者，看到砍开的树干里流出红褐色的汁液，便把它叫做"红树"。名字就这样传了下来——<span class="green">不是因为树叶红，而是因为树的心，是红的。</span>'
+          ] },
+        { image: 'bg8.jpg', tag: '支 柱 根 的 秘 密', title: '为什么它的根<br><span class="highlight">像一张网</span>？',
+          paragraphs: [
+            '红树林扎根在松软的淤泥里，普通树木的根根本抓不住。于是它长出了<span class="green">支柱根</span>——从树干伸出，像拱门一样撑在泥上。',
+            '这些根不只用来站稳，还是<span class="green">呼吸器官</span>。退潮时它们露出水面，直接呼吸空气；涨潮时它们被海水淹没，还能继续工作。',
+            '千百条支柱根缠在一起，就是一道<span class="green">天然防波堤</span>。它削弱海浪、固定泥沙，把海岸线牢牢守住。'
+          ] }
+    ];
+
+    var currentAlbumIndex = 0;
+    var isSwitching = false;
+
+    function switchAlbum(index) {
+        if (index === currentAlbumIndex || isSwitching) return;
+        isSwitching = true;
+        storyImage.classList.add('leaving');
+        setTimeout(function() {
+            var data = albumData[index];
+            storyImage.src = data.image;
+            storyTag.textContent = data.tag;
+            storyTitle.innerHTML = data.title;
+            var pHTML = '';
+            for (var i = 0; i < data.paragraphs.length; i++) pHTML += '<p>' + data.paragraphs[i] + '</p>';
+            storyParagraphs.innerHTML = pHTML;
+            pageCurrent.textContent = (index + 1);
+            for (var j = 0; j < pageDots.length; j++) {
+                if (j === index) pageDots[j].classList.add('active');
+                else pageDots[j].classList.remove('active');
+            }
+            currentAlbumIndex = index;
+            var onLoad = function() {
+                storyImage.classList.remove('leaving');
+                storyImage.removeEventListener('load', onLoad);
+                setTimeout(function() { isSwitching = false; }, 400);
+            };
+            if (storyImage.complete && storyImage.naturalWidth > 0) onLoad();
+            else storyImage.addEventListener('load', onLoad);
+        }, 400);
+    }
+    storyNextBtn.addEventListener('click', function(e) { e.stopPropagation(); switchAlbum((currentAlbumIndex + 1) % albumData.length); });
+    storyPrevBtn.addEventListener('click', function(e) { e.stopPropagation(); switchAlbum((currentAlbumIndex - 1 + albumData.length) % albumData.length); });
+
+    /* 第三屏 · 进出动画 */
+    function updateLibraryState() {
+        var rect = librarySection.getBoundingClientRect();
+        var vh = window.innerHeight;
+
+        var progress = (vh - rect.top) / vh;
+        progress = Math.max(0, Math.min(1, progress));
+
+        var bgProgress = progress;
+        var bgY = (1 - bgProgress) * -100;
+        libraryBg.style.transform = 'translateY(' + bgY + '%)';
+        libraryBg.style.opacity = Math.min(bgProgress * 1.3, 1);
+
+        if (progress >= 0.96) {
+            librarySection.classList.add('bg-dark');
+            librarySection.classList.add('bg-in');
+            librarySection.classList.add('is-ready');
+        } else {
+            librarySection.classList.remove('is-ready');
+            if (progress < 0.85) {
+                librarySection.classList.remove('bg-dark');
+                librarySection.classList.remove('bg-in');
+            }
+        }
+    }
+    window.addEventListener('scroll', updateLibraryState, { passive: true });
+    window.addEventListener('resize', updateLibraryState);
+    updateLibraryState();
+
+    /* 书 */
+    var bookBusy = false;
+    var FLIP_DURATION = 1200;
+
+    function openBook() {
+        if (bookBusy) return;
+        if (bookClip.classList.contains('open')) return;
+        bookBusy = true;
+        bookClip.classList.add('flipping');
+        bookClip.classList.add('open');
+        bookHint.classList.add('hide');
+        setTimeout(function() {
+            bookClip.classList.remove('flipping');
+            bookBusy = false;
+        }, FLIP_DURATION);
+    }
+    function closeBook() {
+        if (bookBusy) return;
+        if (!bookClip.classList.contains('open')) return;
+        bookBusy = true;
+        bookClip.classList.add('flipping');
+        bookClip.classList.remove('open');
+        bookHint.classList.remove('hide');
+        setTimeout(function() {
+            bookClip.classList.remove('flipping');
+            bookBusy = false;
+        }, FLIP_DURATION);
+    }
+    bookCover.addEventListener('click', function(e) { e.stopPropagation(); openBook(); });
+    bookClose.addEventListener('click', function(e) { e.stopPropagation(); closeBook(); });
+    bookHint.addEventListener('click', openBook);
+
+    var currentPreviewKey = 'plant.jpg';
+    function switchPreview(cat) {
+        for (var i = 0; i < bookCategories.length; i++) bookCategories[i].classList.remove('active');
+        cat.classList.add('active');
+        var key = cat.dataset.img;
+        if (currentPreviewKey === key) return;
+        currentPreviewKey = key;
+        bookPreviewImg.classList.add('switching');
+        bookPreviewCaption.classList.add('switching');
+        setTimeout(function() {
+            bookPreviewImg.src = cat.dataset.img;
+            cpName.textContent = cat.dataset.name;
+            cpEn.textContent = cat.dataset.en;
+            cpDesc.textContent = cat.dataset.desc;
+            bookPreviewImg.classList.remove('switching');
+            bookPreviewCaption.classList.remove('switching');
+        }, 200);
+    }
+    for (var bi = 0; bi < bookCategories.length; bi++) {
+        (function(cat) {
+            cat.addEventListener('mouseenter', function() { switchPreview(cat); });
+            cat.addEventListener('click', function(e) {
+                /* 手机端点分类也能预览；跳转交给 navigate_to 外部处理即可，
+                   这里不做阻止，让触屏用户既能预览也能进分类页 */
+                if (isTouchDevice) {
+                    e.preventDefault();
+                    switchPreview(cat);
+                }
+            });
+            cat.addEventListener('touchstart', function() { switchPreview(cat); }, { passive: true });
+        })(bookCategories[bi]);
+    }
+    ['plant.jpg', 'bird.jpg', 'fish.jpg', 'bug.jpg'].forEach(function(src) {
+        var img = new Image();
+        img.src = src;
+    });
+
+    /* ==========================================================
+       识图：更准确的提示词 + 「疑似」表述 + 置信度 + 免责声明
+       ========================================================== */
+    var SCAN_SVG_DOWN = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    var SCAN_SVG_UP = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;"><path d="M18 15l-6-6-6 6"/></svg>';
+
+    var SCAN_SYSTEM_PROMPT = [
+        '你是红树林生态识别专家，专注于中国南方（特别是湛江）红树林生态系统中的植物、鸟类、鱼类、昆虫（蝴蝶、蜻蜓、螳螂等）和潮间带生物的识别。',
+        '',
+        '识别规则（必须遵守）：',
+        '1. 只输出图片中有把握的判断。任何名称都不能写成百分百确定，必须带"疑似"二字。',
+        '2. 无法辨认时（图片模糊、主体不突出、光线太差、非生物内容），在【名称】里写"无法识别"，并在【判断依据】里说明原因，其余字段留空。',
+        '3. 先观察整体再观察细节：羽色/翅纹、喙形、叶形、花器、鳍形、触角等关键特征，宁可保守也不要编造一个听起来合理的名字。',
+        '4. 若该物种不在红树林常见物种之列，照样识别，但在【温馨提示】里注明"此物种并不常见于红树林"。',
+        '5. 所有字段内容保持客观，不要输出任何与识别无关的内容。',
+        '',
+        '请严格按照以下格式回答（共 8 个字段，顺序不能变）：',
+        '【名称】疑似 XX（例如：疑似蓝点紫斑蝶）',
+        '【学名】拉丁学名（把握不大时写"待定"）',
+        '【置信度】高 / 中 / 低（三选一，不要别的写法）',
+        '【判断依据】1-2 句，说明依据了哪些具体特征',
+        '【特征】外形特征（40 字内）',
+        '【习性】生活习性（40 字内）',
+        '【冷知识】一条有趣的科普知识（40 字内）',
+        '【温馨提示】一句很短的话，提醒用户该结果非百分百准确，谨慎参考。'
+    ].join('\n');
+
+    scanBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var isOpen = scanUpload.classList.contains('show');
+        if (isOpen) {
+            scanUpload.classList.remove('show');
+            scanBtn.innerHTML = '开始识别 ' + SCAN_SVG_DOWN;
+        } else {
+            scanUpload.classList.add('show');
+            scanBtn.innerHTML = '收起 ' + SCAN_SVG_UP;
+        }
+    });
+
+    scanUploadArea.addEventListener('click', function(e) {
+        e.stopPropagation();
+        scanFileInput.click();
+    });
+    scanFileInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (file) handleScanFile(file);
+        e.target.value = '';
+    });
+    scanUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.8)';
+        scanUploadArea.style.background = 'rgba(126, 232, 181, 0.12)';
+    });
+    scanUploadArea.addEventListener('dragleave', function() {
+        scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.4)';
+        scanUploadArea.style.background = 'rgba(126, 232, 181, 0.03)';
+    });
+    scanUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.4)';
+        scanUploadArea.style.background = 'rgba(126, 232, 181, 0.03)';
+        var file = e.dataTransfer.files[0];
+        if (file) handleScanFile(file);
+    });
+
+    var scanAbortController = null;
+    var scanTimeout = null;
+    var scanCancelled = false;
+
+    function cancelScan() {
+        scanCancelled = true;
+        if (scanAbortController) { scanAbortController.abort(); scanAbortController = null; }
+        if (scanTimeout) { clearTimeout(scanTimeout); scanTimeout = null; }
+        scanLoading.classList.remove('show');
+        scanResult.classList.remove('show');
+        scanUpload.classList.add('show');
+    }
+    window.cancelScan = cancelScan;
+
+    function handleScanFile(file) {
+        if (!/^image\//.test(file.type)) { alert('请上传图片文件（JPG / PNG）。'); return; }
+        if (file.size > 5 * 1024 * 1024) { alert('图片太大了，请选择小于 5MB 的图片。'); return; }
+        scanCancelled = false;
+        scanUpload.classList.remove('show');
+        scanLoading.classList.add('show');
+        scanResult.classList.remove('show');
+        var reader = new FileReader();
+        reader.onload = function(event) {
+            var base64 = event.target.result;
+            compressImage(base64, 1024, 0.8).then(function(compressed) {
+                return callScanAPI(compressed, 0);
+            }).catch(function(err) {
+                scanLoading.classList.remove('show');
+                if (err === 'IMAGE_DECODE_FAILED') {
+                    showScanResult('这张图片无法解码，请换一张试试。', true);
+                } else {
+                    showScanResult('图片处理失败，请换一张试试。', true);
+                }
+            });
+        };
+        reader.onerror = function() {
+            scanLoading.classList.remove('show');
+            showScanResult('图片读取失败，请重新选择。', true);
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function compressImage(base64Str, maxWidth, quality) {
+        return new Promise(function(resolve, reject) {
+            var img = new Image();
+            img.src = base64Str;
+            img.onload = function() {
+                try {
+                    var c = document.createElement('canvas');
+                    var w = img.width, h = img.height;
+                    if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
+                    c.width = w; c.height = h;
+                    var cx = c.getContext('2d');
+                    cx.drawImage(img, 0, 0, w, h);
+                    var out = c.toDataURL('image/jpeg', quality);
+                    var q = quality;
+                    /* 中转站对请求体大小敏感：base64 超过约52万字符(≈380KB)自动降质量重压 */
+                    while (out.length > 520000 && q > 0.35) {
+                      q -= 0.1;
+                      out = c.toDataURL('image/jpeg', q);
+                    }
+                    resolve(out);
+                } catch (err) {
+                    reject(err);
+                }
+            };
+            img.onerror = function() { reject('IMAGE_DECODE_FAILED'); };
+        });
+    }
+
+    function callScanAPI(base64Data, attempt) {
+        attempt = attempt || 0;
+        scanAbortController = new AbortController();
+        scanTimeout = setTimeout(function() {
+            if (scanAbortController) scanAbortController.abort();
+        }, API_CONFIG.timeout);
+
+        return fetch(API_CONFIG.url, {
+            method: 'POST',
+            headers: buildHeaders(),
+            body: JSON.stringify({
+                model: API_CONFIG.scanModel,
+                temperature: 0.1,
+                max_tokens: 2000,
+                messages: [{
+                    role: "user",
+                    content: [
+                        { type: "text", text: SCAN_SYSTEM_PROMPT },
+                        { type: "image_url", image_url: { url: base64Data } }
+                    ]
+                }]
+            }),
+            signal: scanAbortController.signal
+        }).then(function(response) {
+            if (scanTimeout) { clearTimeout(scanTimeout); scanTimeout = null; }
+            scanAbortController = null;
+            return readApiResponse(response);
+        }).then(function(data) {
+            scanLoading.classList.remove('show');
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                var _m = data.choices[0].message || {};
+                var _txt = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim();
+                if (_txt) renderScanResult(_txt);
+                else showScanResult('AI 返回了空结果：多为这张照片触发了内容过滤（跟你的操作无关），或回复被截断——换张照片通常就能恢复。', true);
+            } else {
+                var msg = (data.error && data.error.message) ? String(data.error.message) : '识别失败，请重试。';
+                showScanResult(msg, true);
+            }
+        }).catch(function(err) {
+            if (scanTimeout) { clearTimeout(scanTimeout); scanTimeout = null; }
+            scanAbortController = null;
+            if (scanCancelled) return;   /* 用户主动取消，不做任何提示 */
+
+            if (err && err.name === 'AbortError') {
+                /* 超时？只自动重试一次 */
+                if (attempt < API_CONFIG.maxRetry) return callScanAPI(base64Data, attempt + 1);
+                scanLoading.classList.remove('show');
+                showScanResult('识别超时了，请换一张更小的图片或稍后重试。', true);
+                return;
+            }
+            if (err && err.isHttp) {
+                scanLoading.classList.remove('show');
+                showScanResult(httpFriendlyError(err.status), true);
+                return;
+            }
+            /* 网络抖动：同样给一次重试机会 */
+            if (attempt < API_CONFIG.maxRetry) return callScanAPI(base64Data, attempt + 1);
+            scanLoading.classList.remove('show');
+            showScanResult('网络连接失败，请检查网络后重试。', true);
+        });
+    }
+
+    /* 帮 we 构造不带任何注入风险的节点 */
+    function scanEl(tag, cls, text) {
+        var d = document.createElement(tag);
+        if (cls) d.className = cls;
+        if (text != null && text !== '') d.textContent = text;
+        return d;
+    }
+
+    function renderScanResult(text) {
+        var getField = function(label) {
+            var regex = new RegExp('【\\s*' + label + '\\s*】([\\s\\S]*?)(?=【|$)', 'i');
+            var match = text.match(regex);
+            return match ? match[1].trim() : '';
+        };
+        var name = getField('名称');
+        var latin = getField('学名');
+        var conf = getField('置信度');
+        var basis = getField('判断依据');
+        var feature = getField('特征');
+        var habit = getField('习性');
+        var fact = getField('冷知识');
+        var tip = getField('温馨提示');
+
+        scanResult.textContent = '';
+        if (name) {
+            var head = document.createElement('div');
+            head.className = 'scan-result-head';
+            var nameLabel = scanEl('div', 'scan-result-name', name);
+            head.appendChild(nameLabel);
+            if (conf) {
+                var lvl = conf.indexOf('高') > -1 ? 'h' : (conf.indexOf('中') > -1 ? 'm' : 'l');
+                head.appendChild(scanEl('span', 'scan-result-conf conf-' + lvl, '置信度 ' + conf));
+            }
+            scanResult.appendChild(head);
+            if (latin) scanResult.appendChild(scanEl('div', 'scan-result-latin', latin));
+            var addItem = function(labelText, contentText) {
+                var box = scanEl('div', 'scan-result-item');
+                box.appendChild(scanEl('div', 'scan-result-label', '◆ ' + labelText));
+                box.appendChild(scanEl('div', 'scan-result-content', contentText));
+                scanResult.appendChild(box);
+            };
+            if (basis) addItem('判断依据', basis);
+            if (feature) addItem('特征', feature);
+            if (habit) addItem('习性', habit);
+            if (fact) addItem('冷知识', fact);
+            if (tip) scanResult.appendChild(scanEl('div', 'scan-result-tip', '☝ ' + tip));
+        } else {
+            /* 模型没按格式回答（或返回了"无法识别"）：原文展示，不折行截断 */
+            scanResult.appendChild(scanEl('div', 'scan-result-raw', text));
+        }
+
+        /* 免责声明：结果不写百分百 */
+        scanResult.appendChild(scanEl('div', 'scan-disclaimer',
+            '以上内容由 AI 自动生成，均属于"疑似"识别结果，存在误判可能，仅供科普参考，不构成专业鉴定结论。'));
+        var againBtn = scanEl('button', 'scan-cancel', '重新上传');
+        againBtn.type = 'button';
+        againBtn.addEventListener('click', cancelScan);
+        scanResult.appendChild(againBtn);
+        scanResult.classList.add('show');
+    }
+
+    function showScanResult(text, isError) {
+        scanResult.textContent = '';
+        var raw = scanEl('div', 'scan-result-raw', text);
+        if (isError) raw.style.color = '#ff8a8a';
+        scanResult.appendChild(raw);
+        var againBtn = scanEl('button', 'scan-cancel', '重新上传');
+        againBtn.type = 'button';
+        againBtn.addEventListener('click', cancelScan);
+        scanResult.appendChild(againBtn);
+        scanResult.classList.add('show');
+    }
+
+    /* 一键识图 */
+    window.goToAIScreen = function() {
+        var library = document.getElementById('library-section');
+        if (!library) return;
+        if (aiChatBox.classList.contains('show')) closeChat();
+        library.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        setTimeout(function() {
+            if (!scanUpload.classList.contains('show')) {
+                scanBtn.click();
+            }
+        }, 1000);
+    };
+
+    /* AI 助手（聊天） */
+    var isAILoading = false;
+
+    var chatHistory = [
+        { role: "system", content: "你是'小树'，湛江红树林生态科普专家，也是游客的随行智能助手。游客问红树林、动植物、环保相关的问题时，给出准确、有趣的科普回答；问其他日常问题（天气、学习、闲聊等）也可以友好回答，并自然地把话题带回自然与环保。回答简洁（150字内）。红线：拒绝任何色情、低俗、暴力、赌博、毒品等不良请求；不讨论敏感政治话题，遇到时礼貌地把话题引回生态保护。若用户消息附有[站内知识库参考资料]，优先依据资料回答；资料里没有的不要编造。" }
+    ];
+
+    var QUICK_ANSWERS = [
+        { test: /^1\s*\+\s*1\s*=*\s*\??$/, answer: '1 + 1 = 2 😊 虽然这很简单，但红树林也有它的数学——叶片在枝头呈螺旋排列，遵循斐波那契数列。一起来认识这片森林吧，别忘了保护环境哦 🌿' },
+        { test: /^你好|hi|hello|嗨$/i, answer: '你好！我是红树林 AI 导游小树 🌿 想了解植物、鸟类、鱼类、虫类还是环保？问我就行。别忘了保护环境哦！' },
+        { test: /^谢谢|thanks$/i, answer: '不客气！认识红树林、保护红树林，都是很美好的事。让我们一起守护这片海上森林 🌊🌿' },
+        { test: /^再见|拜拜|bye$/i, answer: '再见！记得常回来看看这片红树林。每一次关注，都是对自然的守护 🌿' },
+        { test: /^你是谁|你叫什么/i, answer: '我是"小树"——红树林 AI 导游。专门解答红树林生态、动植物和环保问题，随时问我哦 🌿' }
+    ];
+
+    function tryQuickAnswer(text) {
+        var trimmed = text.trim();
+        for (var i = 0; i < QUICK_ANSWERS.length; i++) {
+            if (QUICK_ANSWERS[i].test.test(trimmed)) return QUICK_ANSWERS[i].answer;
+        }
+        return null;
+    }
+
+    var pupils = document.querySelectorAll('.pupil');
+    if (!isTouchDevice) {
+        document.addEventListener('mousemove', function(e) {
+            var rect = aiFloatBtn.getBoundingClientRect();
+            var cx = rect.left + rect.width / 2;
+            var cy = rect.top + rect.height / 2;
+            var dx = e.clientX - cx;
+            var dy = e.clientY - cy;
+            var angle = Math.atan2(dy, dx);
+            var dist = Math.min(Math.sqrt(dx * dx + dy * dy), 3);
+            var x = Math.cos(angle) * dist;
+            var y = Math.sin(angle) * dist;
+            for (var i = 0; i < pupils.length; i++) {
+                pupils[i].style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+            }
+        });
+    }
+
+    function openChat() {
+        aiChatBox.classList.add('show');
+        document.getElementById('jump-ai-btn').classList.add('show');
+        if (!isTouchDevice) {
+            aiInput.focus();
+            document.body.style.cursor = 'auto';
+            cursorDot.style.display = 'none';
+            cursorRing.style.display = 'none';
+        }
+    }
+    function closeChat() {
+        aiChatBox.classList.remove('show');
+        document.getElementById('jump-ai-btn').classList.remove('show');
+        if (!isTouchDevice) {
+            document.body.style.cursor = 'none';
+            cursorDot.style.display = 'block';
+            cursorRing.style.display = 'block';
+        }
+    }
+
+    var isSpriteDragging = false;
+    var spriteStartX = 0, spriteStartY = 0;
+    var initialLeft = 0, initialTop = 0;
+
+    function dragStart(e) {
+        if (e.type === 'mousedown' && e.button !== 0) return;
+        if (e.type === 'touchstart' && e.touches.length > 1) return;
+        isSpriteDragging = false;
+        var clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+        var clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+        var rect = aiAssistantContainer.getBoundingClientRect();
+        spriteStartX = clientX;
+        spriteStartY = clientY;
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        aiAssistantContainer.style.bottom = 'auto';
+        aiAssistantContainer.style.right = 'auto';
+        aiAssistantContainer.style.left = initialLeft + 'px';
+        aiAssistantContainer.style.top = initialTop + 'px';
+        document.addEventListener('mousemove', dragMove);
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('touchmove', dragMove, { passive: false });
+        document.addEventListener('touchend', dragEnd);
+    }
+    function dragMove(e) {
+        var clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+        var clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+        var dx = clientX - spriteStartX;
+        var dy = clientY - spriteStartY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            isSpriteDragging = true;
+            if (e.cancelable) e.preventDefault();
+        }
+        if (isSpriteDragging) {
+            aiAssistantContainer.style.left = (initialLeft + dx) + 'px';
+            aiAssistantContainer.style.top = (initialTop + dy) + 'px';
+        }
+    }
+    function dragEnd() {
+        document.removeEventListener('mousemove', dragMove);
+        document.removeEventListener('mouseup', dragEnd);
+        document.removeEventListener('touchmove', dragMove);
+        document.removeEventListener('touchend', dragEnd);
+    }
+
+    aiFloatBtn.addEventListener('mousedown', dragStart);
+    aiFloatBtn.addEventListener('touchstart', dragStart, { passive: false });
+    aiFloatBtn.addEventListener('click', function() {
+        if (isSpriteDragging) { isSpriteDragging = false; return; }
+        aiFloatBtn.classList.remove('breathe');
+        void aiFloatBtn.offsetWidth;
+        aiFloatBtn.classList.add('breathe');
+        setTimeout(function() {
+            if (aiChatBox.classList.contains('show')) closeChat();
+            else openChat();
+        }, 250);
+    });
+    aiCloseBtn.addEventListener('click', closeChat);
+
+    aiClearBtn.addEventListener('click', function() {
+        if (confirm('确定要清空所有的聊天记录吗？')) {
+            localStorage.removeItem('mangroveChatHistory');
+            chatHistory = [
+                { role: "system", content: "你是'小树'，湛江红树林生态科普专家，也是游客的随行智能助手。游客问红树林、动植物、环保相关的问题时，给出准确、有趣的科普回答；问其他日常问题（天气、学习、闲聊等）也可以友好回答，并自然地把话题带回自然与环保。回答简洁（150字内）。红线：拒绝任何色情、低俗、暴力、赌博、毒品等不良请求；不讨论敏感政治话题，遇到时礼貌地把话题引回生态保护。若用户消息附有[站内知识库参考资料]，优先依据资料回答；资料里没有的不要编造。" }
+            ];
+            aiMessages.textContent = '';
+            var hello = document.createElement('div');
+            hello.className = 'ai-message ai-message-bot';
+            hello.textContent = '你好，我是小树。关于红树林的植物、鸟类、鱼类、虫类或环保问题，都可以问我。';
+            aiMessages.appendChild(hello);
+            saveChatHistory();
+        }
+    });
+
+    /* ==========================================================
+       聊天记录：跨页兼容（与 plant.html 完全一致）
+       - 新版：JSON 数组 [{"role":"user","text":"..."}]
+       - 旧版：HTML 字符串（用 DOMParser 安全解析，防 XSS）
+       ========================================================== */
+    function saveChatHistory() {
+        try {
+            var msgs = aiMessages.querySelectorAll('.ai-message');
+            var arr = [];
+            for (var i = 0; i < msgs.length; i++) {
+                var m = msgs[i];
+                if (m.classList.contains('ai-message-loading')) continue;
+                var role = m.classList.contains('ai-message-user') ? 'user' : 'bot';
+                var text = (m.textContent || '').trim();
+                if (!text) continue;
+                arr.push({ role: role, text: text });
+            }
+            if (arr.length > 60) arr = arr.slice(-60);
+            localStorage.setItem('mangroveChatHistory', JSON.stringify(arr));
+        } catch (e) {}
+    }
+
+    function renderChatMessages(arr) {
+        aiMessages.textContent = '';
+        for (var i = 0; i < arr.length; i++) {
+            var m = arr[i];
+            if (!m || typeof m.text !== 'string') continue;
+            var text = m.text.trim();
+            if (!text) continue;
+            var msg = document.createElement('div');
+            msg.className = 'ai-message ai-message-' + (m.role === 'user' ? 'user' : 'bot');
+            msg.textContent = text;
+            aiMessages.appendChild(msg);
+        }
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+    }
+
+    function loadChatHistory() {
+        var saved = localStorage.getItem('mangroveChatHistory');
+        if (!saved) return;
+
+        // 格式1：JSON 数组（新版）
+        if (saved.charAt(0) === '[') {
+            try {
+                var arr = JSON.parse(saved);
+                if (Array.isArray(arr) && arr.length > 0) {
+                    renderChatMessages(arr);
+                    return;
+                }
+            } catch (e) {}
+        }
+
+        // 格式2：HTML 字符串（旧版）—— 用 DOMParser 隔离解析
+        if (saved.indexOf('ai-message') >= 0 || saved.charAt(0) === '<') {
+            try {
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(saved, 'text/html');
+                var msgs = doc.querySelectorAll('.ai-message');
+                var arr2 = [];
+                for (var i = 0; i < msgs.length; i++) {
+                    var m = msgs[i];
+                    if (m.classList.contains('ai-message-loading')) continue;
+                    var role = m.classList.contains('ai-message-user') ? 'user' : 'bot';
+                    var text = (m.textContent || '').trim();
+                    if (!text) continue;
+                    arr2.push({ role: role, text: text });
+                }
+                if (arr2.length > 0) {
+                    renderChatMessages(arr2);
+                    saveChatHistory(); // 自动转换格式
+                    return;
+                }
+            } catch (e) {}
+        }
+
+        // 都读不了就清掉
+        try { localStorage.removeItem('mangroveChatHistory'); } catch (e) {}
+    }
+    loadChatHistory();
+
+    function createLoadingBubble() {
+        var div = document.createElement('div');
+        div.className = 'ai-message ai-message-loading';
+        var d1 = document.createElement('span'); d1.className = 'ai-loading-dot';
+        var d2 = document.createElement('span'); d2.className = 'ai-loading-dot';
+        var d3 = document.createElement('span'); d3.className = 'ai-loading-dot';
+        div.appendChild(d1); div.appendChild(d2); div.appendChild(d3);
+        return div;
+    }
+
+    function sendAIMessage() {
+        var text = aiInput.value.trim();
+        if (!text || isAILoading) return;
+
+        appendMessage('user', text);
+        aiInput.value = '';
+
+        var quick = tryQuickAnswer(text);
+        if (quick) {
+            var loadingDivQ = createLoadingBubble();
+            aiMessages.appendChild(loadingDivQ);
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+            setTimeout(function() {
+                if (loadingDivQ.parentNode) aiMessages.removeChild(loadingDivQ);
+                appendMessage('bot', quick);
+            }, 220);
+            return;
+        }
+
+        isAILoading = true;
+        var kbHits = (window.kbSearch ? window.kbSearch(text) : []);
+        var kbRef = kbHits.length ? ('\n\n[站内知识库参考资料]\n' + kbHits.map(function (h) { return '· ' + h.n + '：' + h.d + '；' + h.f; }).join('\n')) : '';
+        chatHistory.push({ role: "user", content: text + kbRef });
+        if (chatHistory.length > 11) {
+            chatHistory = [chatHistory[0]].concat(chatHistory.slice(-10));
+        }
+        var loadingDiv = createLoadingBubble();
+        aiMessages.appendChild(loadingDiv);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+
+        fetch(API_CONFIG.url, {
+            method: 'POST',
+            headers: buildHeaders(),
+            body: JSON.stringify({
+                model: API_CONFIG.chatModel,
+                messages: chatHistory,
+                max_tokens: 400,
+                temperature: 0.7
+            })
+        }).then(function(response) {
+            return readApiResponse(response);
+        }).then(function(data) {
+            if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                var reply = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim() || '（AI 没返回内容，请重新发送一次）';
+                appendMessage('bot', reply);
+                chatHistory.push({ role: "assistant", content: reply });
+            } else {
+                var emsg = (data.error && data.error.message) ? String(data.error.message) : '抱歉，我暂时无法回答，请稍后再试。';
+                appendMessage('bot', emsg);
+            }
+        }).catch(function(err) {
+            if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
+            if (err && err.isHttp) {
+                appendMessage('bot', httpFriendlyError(err.status));
+            } else {
+                appendMessage('bot', '网络连接失败，请检查网络。');
+            }
+        })['finally'](function() {
+            isAILoading = false;
+            saveChatHistory();
+        });
+    }
+    function appendMessage(role, text) {
+        var msg = document.createElement('div');
+        msg.className = 'ai-message ai-message-' + role;
+        msg.textContent = text;
+        aiMessages.appendChild(msg);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+        saveChatHistory();
+    }
+    aiSendBtn.addEventListener('click', sendAIMessage);
+    aiInput.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') sendAIMessage();
+    });
+
+})();
+</script>
+<!-- ==================== 站内搜索 + 私有知识库（RAG） ==================== -->
+<div class="kb-box" id="kbBox" style="display:none;">
+  <div class="kb-head" id="kbHead">
+    <span class="kb-ico">🔎</span>
+    <input id="kbInput" type="text" placeholder="搜站内物种：白鹭 / 金鲳鱼 / 秋茄…" autocomplete="off">
+    <span class="kb-col" id="kbCol" title="收起/展开">—</span>
+    <span class="kb-grip" title="按住拖动">⠿</span>
+  </div>
+  <div class="kb-list" id="kbList"><div class="kb-empty">输入关键词试试：白鹭、招潮蟹、秋茄、虎斑蝶…<br>点击结果跳转对应页面</div></div>
+</div>
+<script>
+(function () {
+  'use strict';
+  var KB = [
+    { n:'白鹭', la:'Egretta garzetta', en:'Little Egret', cat:'鸟类', pg:'bird.html',
+      d:'春季门面鸟：每年4-6月是繁殖育雏的黄金时节，湛江温暖的红树林湿地是它们的大本营。', f:'白鹭只选水质清洁、鱼虾丰富的湿地栖息，被称为"环境检测鸟"。' },
+    { n:'池鹭', la:'Ardeola bacchus', en:'Chinese Pond Heron', cat:'鸟类', pg:'bird.html',
+      d:'红树林常见留鸟，浅水处觅食、树冠上休息。', f:'羽毛随季节换装：夏天栗红色，冬天变褐色条纹"迷彩服"。' },
+    { n:'苍鹭', la:'Ardea cinerea', en:'Grey Heron', cat:'鸟类', pg:'bird.html',
+      d:'大型涉禽，常单独或小群在金牛岛红树林林间穿梭。', f:'捕鱼时可以一动不动站上数小时，外号"老等"。' },
+    { n:'栗喉蜂虎', la:'Merops philippinus', en:'Blue-tailed Bee-eater', cat:'鸟类', pg:'bird.html',
+      d:'湛江典型夏候鸟，3-4月成群奔赴雷州半岛天成台凿洞筑巢，国家二级保护。', f:'"捕蜂高手"，能在空中精准捕食蜜蜂和黄蜂。' },
+    { n:'水雉', la:'Hydrophasianus chirurgus', en:'Pheasant-tailed Jacana', cat:'鸟类', pg:'bird.html',
+      d:'"凌波仙子"：细长脚爪分散体重，能走在睡莲、菱角浮叶上。', f:'实行"一妻多夫"，孵蛋育雏全由雄鸟负责。' },
+    { n:'夜鹭', la:'Nycticorax nycticorax', en:'Black-crowned Night Heron', cat:'鸟类', pg:'bird.html',
+      d:'夜行性鸟类，黄昏后飞出觅食，白天躲在树冠层休息。', f:'红色"火眼金睛"能在微光下看清水中的小鱼小虾。' },
+    { n:'大白鹭', la:'Ardea alba', en:'Great Egret', cat:'鸟类', pg:'bird.html',
+      d:'秋季成群在红树林浅滩觅食的大型涉禽，国家二级保护。', f:'飞行时脖颈弯成"S"形、双腿后伸，被誉为"湿地舞者"。' },
+    { n:'彩鹮', la:'Plegadis falcinellus', en:'Glossy Ibis', cat:'鸟类', pg:'bird.html',
+      d:'中等体型涉禽，它的出现是当地生态向好的证明，国家一级保护。', f:'羽毛能变出深栗、翠绿、青铜、紫罗兰等金属光泽，外号"五彩斑斓的黑"。' },
+    { n:'黄嘴白鹭', la:'Egretta eulophotes', en:'Chinese Egret', cat:'鸟类', pg:'bird.html',
+      d:'对环境要求极高，喜欢红树林与沙滩海岛，国家一级保护。', f:'繁殖期的漂亮饰羽曾引来大量捕杀，如今受严格保护。' },
+    { n:'黑脸琵鹭', la:'Platalea minor', en:'Black-faced Spoonbill', cat:'鸟类', pg:'bird.html',
+      d:'每年深秋至来年开春从北方飞抵湛江越冬，国家一级保护。', f:'全球最濒危鸟类之一，"黑面舞者"，觅食姿态像弹奏琵琶。' },
+    { n:'鸬鹚', la:'Phalacrocorax carbo', en:'Great Cormorant', cat:'鸟类', pg:'bird.html',
+      d:'冬季大批抵达湛江越冬，擅长潜水捕鱼。', f:'羽毛不像其他水鸟防水，捕鱼后要张开翅膀晾晒。' },
+    { n:'绿翅鸭', la:'Anas crecca', en:'Green-winged Teal', cat:'鸟类', pg:'bird.html',
+      d:'冬季高桥红树林区常记录到近千只野鸭群。', f:'鸭类"小个子"，飞行速度极快，像绿色小炮弹。' },
+    { n:'弧边招潮蟹', la:'Uca arcuata', en:'Fiddler Crab', cat:'鱼虾蟹', pg:'fish.html',
+      d:'滩涂最常见招潮蟹，雄蟹挥舞着大螯，穴居深约30厘米。', f:'大钳不是用来打架而是"招手"，潮水要来提前躲洞，是潮汐预报员。' },
+    { n:'弹涂鱼', la:'Periophthalmus modestus', en:'Shuttles Hoppfish', cat:'鱼虾蟹', pg:'fish.html',
+      d:'少数能上岸活动的鱼：胸鳍爬行跳跃，甚至能攀上红树根部。', f:'靠皮肤和口腔黏膜呼吸，还会在泥滩上"做俯卧撑"求偶。' },
+    { n:'锯缘青蟹', la:'Scylla serrata', en:'Mud Crab', cat:'鱼虾蟹', pg:'fish.html',
+      d:'湛江著名食用蟹，栖息滩涂洞穴，夜间捕食贝类小鱼。', f:'湛江人秋天的"黄油蟹"就是它的特别形态，只能横着走。' },
+    { n:'鲻鱼', la:'Mugil cephalus', en:'Flathead Grey Mullet', cat:'鱼虾蟹', pg:'fish.html',
+      d:'咸淡水交汇处集群活动，吃根系周围的藻类和碎屑。', f:'胃里有厚肌肉能磨碎食物，被称为"海洋反刍动物"。' },
+    { n:'黄鳍棘鲷', la:'Acanthopagrus latus', en:'Yellowfin Seabream', cat:'鱼虾蟹', pg:'fish.html',
+      d:'俗称黄脚立，因鱼鳍发黄得名，常在根系附近活动。', f:'小时候是"雌雄同体"，成年后才确定性别。' },
+    { n:'鲈鱼', la:'Lateolabrax japonicus', en:'Japanese Sea Bass', cat:'鱼虾蟹', pg:'fish.html',
+      d:'根系区常见凶猛肉食鱼，河口咸淡水的猎人。', f:'中国四大淡水名鱼之一，其实也能在咸水中生活。' },
+    { n:'卵形鲳鲹', la:'Trachinotus ovatus', en:'Snubnose Pompano', cat:'鱼虾蟹', pg:'fish.html',
+      d:'金鲳鱼，湛江海水养殖明星，养殖水深10-15米。', f:'湛江是"中国金鲳鱼之都"，全国最大产区。' },
+    { n:'斜带石斑鱼', la:'Epinephelus coioides', en:'Orange-spotted Grouper', cat:'鱼虾蟹', pg:'fish.html',
+      d:'俗称青斑，常在礁石沉船附近伏击猎物。', f:'小时候是雌性、长大后变雄性，还会变色伪装。' },
+    { n:'露兜树', la:'Pandanus tectorius', en:'Screw Pine', cat:'植物', pg:'plant.html',
+      d:'海岸最独特的常绿小乔木，支柱根像八爪鱼稳固树身。', f:'聚花果成熟时桔红色，能浮在海面上漂流传播。' },
+    { n:'苦郎树', la:'Clerodendrum inerme', en:'Wild Jasmine', cat:'植物', pg:'plant.html',
+      d:'常绿蔓性灌木，白花紫蕊像烟花，花期几乎全年。', f:'耐盐碱抗风、根系固沙护岸；全株可入药但有小毒。' },
+    { n:'老鼠簕', la:'Acanthus ilicifolius', en:'Holly-leaved Acanthus', cat:'植物', pg:'plant.html',
+      d:'叶缘带刺像老鼠爪，穗状花序白中带紫。', f:'果实拖着花柱像老鼠的身体和尾巴；重要真红树植物。' },
+    { n:'马鞍藤', la:'Ipomoea pes-caprae', en:'Beach Morning Glory', cat:'植物', pg:'plant.html',
+      d:'紫红漏斗花贴着沙滩蔓延，号称"海滨花后"。', f:'种子随海流漂浮到世界各地拓展族群。' },
+    { n:'黄槿', la:'Talipariti tiliaceum', en:'Sea Hibiscus', cat:'植物', pg:'plant.html',
+      d:'常绿小乔木，盛花期6-8月，海岸绿化常见树种。', f:'花朝开暮落：清晨开黄色，午后转橙红后凋谢。' },
+    { n:'红海榄', la:'Rhizophora stylosa', en:'Stilted Mangrove', cat:'植物', pg:'plant.html',
+      d:'红树林最"经典"的树种，支柱根如拱门扎入泥中。', f:'典型胎生植物：种子在果实离母树之前就已发芽。' },
+    { n:'秋茄', la:'Kandelia obovata', en:'Autumn Mangrove', cat:'植物', pg:'plant.html',
+      d:'因胚轴秋末成熟、形似茄子而得名，花期7-8月。', f:'是红树林中分布最北的树种。' },
+    { n:'杨叶肖槿', la:'Thespesia populnea', en:'Portia Tree', cat:'植物', pg:'plant.html',
+      d:'花冠淡黄、花心暗红，花期5-8月、果期8-12月。', f:'果实木质化后能在海水中漂流数月传播种子。' },
+    { n:'海杧果', la:'Cerbera manghas', en:'Sea Mango', cat:'植物', pg:'plant.html',
+      d:'白花粉心似茉莉香，果期7月至翌年4月。', f:'全株剧毒！半颗果实足以致命，观赏请勿采摘。' },
+    { n:'木榄', la:'Bruguiera gymnorrhiza', en:'Oriental Mangrove', cat:'植物', pg:'plant.html',
+      d:'高大常绿乔木，"膝根"拱出泥面呼吸。', f:'膝根既是呼吸器官又能稳固树身；树皮可提取单宁。' },
+    { n:'玉带凤蝶', la:'Papilio polytes', en:'Common Mormon', cat:'昆虫', pg:'bug.html',
+      d:'红树林常见大型凤蝶，一排白斑如玉带横贯黑翅。', f:'雌蝶模仿有毒的红珠凤蝶保护自己，叫"贝氏拟态"。' },
+    { n:'蓝点紫斑蝶', la:'Euploea midamus', en:'Blue-spotted Crow', cat:'昆虫', pg:'bug.html',
+      d:'翅膀泛蓝紫色金属光泽，湛江暖冬是它们喜爱的越冬地。', f:'紫斑蝶集体越冬，成千上万挤在同一山谷取暖。' },
+    { n:'虎斑蝶', la:'Danaus genutia', en:'Common Tiger', cat:'昆虫', pg:'bug.html',
+      d:'黑橙相间像虎纹，红树林里最具视觉冲击力的蝴蝶之一。', f:'幼虫吃有毒萝藦科植物，把毒素存在体内当"毒衣"。' },
+    { n:'迁粉蝶', la:'Catopsilia pomona', en:'Common Emigrant', cat:'昆虫', pg:'bug.html',
+      d:'因迁徙习性得名，成群贴着树冠飞行。', f:'翅膀颜色一半来自色素、一半来自鳞片的微观结构色。' },
+    { n:'碧伟蜓', la:'Anax parthenope', en:'Lesser Emperor', cat:'昆虫', pg:'bug.html',
+      d:'水面最常见的大型蜻蜓，通体碧蓝，空中顶级猎手。', f:'复眼由近3万个小眼组成，视野几乎360度无死角。' },
+    { n:'中华大刀螳', la:'Tenodera sinensis', en:'Chinese Mantis', cat:'昆虫', pg:'bug.html',
+      d:'伏在枝条上一动不动等待猎物，出击快如闪电。', f:'头部能180度旋转，是昆虫中唯一能"回头看"的。' },
+    { n:'斑络新妇', la:'Nephila pilipes', en:'Giant Wood Spider', cat:'昆虫', pg:'bug.html',
+      d:'最大的结网蜘蛛，雌蛛可达5厘米，金网直径超一米。', f:'金色蛛丝反射紫外线，反而更容易吸引昆虫撞上来。' }
+  ];
+
+  var box = document.getElementById('kbBox');
+  var input = document.getElementById('kbInput');
+  var list = document.getElementById('kbList');
+  var head = document.getElementById('kbHead');
+  var dockEl = document.getElementById('library-section');
+
+  var pos = { l: 16, t: 140 };
+  function place() {
+    var x = Math.max(6, Math.min(window.innerWidth - box.offsetWidth - 6, pos.l));
+    var y = Math.max(6, Math.min(window.innerHeight - 52, pos.t));
+    box.style.left = x + 'px'; box.style.top = y + 'px';
+  }
+  function showOnce() {
+    if (box.dataset.shown === '1') return;
+    box.dataset.shown = '1';
+    box.style.display = 'block';
+    place();
+  }
+  function checkDock() {
+    if (!dockEl) { showOnce(); return; }
+    var r = dockEl.getBoundingClientRect();
+    if (r.top < window.innerHeight * 0.8) showOnce();
+  }
+  window.addEventListener('scroll', checkDock, { passive: true });
+  checkDock();
+  window.addEventListener('resize', function () { if (box.style.display !== 'none') place(); });
+
+  var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
+  function dStart(e) {
+    if (e.target && (e.target.id === 'kbInput' || e.target.id === 'kbCol')) return;
+    dragging = true;
+    var t = e.touches ? e.touches[0] : e;
+    var r = box.getBoundingClientRect();
+    sx = t.clientX; sy = t.clientY; ox = r.left; oy = r.top;
+    box.style.right = 'auto';
+    document.addEventListener('mousemove', dMove);
+    document.addEventListener('mouseup', dEnd);
+    document.addEventListener('touchmove', dMove, { passive: false });
+    document.addEventListener('touchend', dEnd);
+    if (e.cancelable) e.preventDefault();
+  }
+  function dMove(e) {
+    if (!dragging) return;
+    var t = e.touches ? e.touches[0] : e;
+    pos.l = Math.max(6, Math.min(window.innerWidth - box.offsetWidth - 6, ox + (t.clientX - sx)));
+    pos.t = Math.max(6, Math.min(window.innerHeight - 52, oy + (t.clientY - sy)));
+    box.style.left = pos.l + 'px';
+    box.style.top = pos.t + 'px';
+    if (e.cancelable) e.preventDefault();
+  }
+  function dEnd() {
+    dragging = false;
+    document.removeEventListener('mousemove', dMove);
+    document.removeEventListener('mouseup', dEnd);
+    document.removeEventListener('touchmove', dMove);
+    document.removeEventListener('touchend', dEnd);
+  }
+  head.addEventListener('mousedown', dStart);
+  head.addEventListener('touchstart', dStart, { passive: false });
+  document.getElementById('kbCol').addEventListener('click', function () {
+    box.classList.toggle('collapsed');
+    this.textContent = box.classList.contains('collapsed') ? '＋' : '—';
+  });
+
+  function search(q) {
+    q = String(q || '').trim().toLowerCase();
+    if (!q) return [];
+    var toks = q.split(/[\s,，。、？?！!]+/).filter(function (t) { return t.length; });
+    if (!toks.length) return [];
+    return KB.map(function (e) {
+      var sc = 0;
+      var la = (e.la || '').toLowerCase(), en = (e.en || '').toLowerCase();
+      toks.forEach(function (t) {
+        if (e.n.indexOf(t) > -1) sc += 4;
+        else if (en.indexOf(t) > -1 || la.indexOf(t) > -1) sc += 2;
+        if ((e.d || '').indexOf(t) > -1 || (e.f || '').indexOf(t) > -1) sc += 1;
+      });
+      return { e: e, sc: sc };
+    }).filter(function (x) { return x.sc > 0; })
+      .sort(function (a, b) { return b.sc - a.sc; })
+      .map(function (x) { return x.e; });
+  }
+  window.kbSearch = function (text) { return search(text).slice(0, 2); };
+
+  /* 物种 → 子页内部定位（深链：直达科普内容） */
+  var JSMAP = {
+    '白鹭':['spring',0], '池鹭':['spring',1], '苍鹭':['spring',2],
+    '栗喉蜂虎':['summer',0], '水雉':['summer',1], '夜鹭':['summer',2],
+    '大白鹭':['autumn',0], '彩鹮':['autumn',1], '黄嘴白鹭':['autumn',2],
+    '黑脸琵鹭':['winter',0], '鸬鹚':['winter',1], '绿翅鸭':['winter',2],
+    '弧边招潮蟹':['tidal',0], '弹涂鱼':['tidal',1], '锯缘青蟹':['tidal',2],
+    '鲻鱼':['root',0], '黄鳍棘鲷':['root',1], '鲈鱼':['root',2],
+    '卵形鲳鲹':['coastal',0], '斜带石斑鱼':['coastal',1],
+    '露兜树':['allyear',0], '苦郎树':['allyear',1],
+    '老鼠簕':['spring',0], '马鞍藤':['spring',1],
+    '黄槿':['summer',0], '红海榄':['summer',1],
+    '秋茄':['autumn',0], '杨叶肖槿':['autumn',1],
+    '海杧果':['winter',0], '木榄':['winter',1],
+    '玉带凤蝶':['bug',0], '蓝点紫斑蝶':['bug',1], '虎斑蝶':['bug',2],
+    '迁粉蝶':['bug',3], '碧伟蜓':['bug',4], '中华大刀螳':['bug',5], '斑络新妇':['bug',6]
+  };
+  function kbJumpTo(e) {
+    var payload = { pg: e.pg };
+    if (JSMAP[e.n]) payload.js = JSMAP[e.n];
+    try { sessionStorage.setItem('kbJump', JSON.stringify(payload)); } catch (err) {}
+    if (typeof navigateTo === 'function') navigateTo(e.pg);
+    else location.href = e.pg;
+  }
+
+  function render(q) {
+    var hits = search(q);
+    if (!q.trim()) {
+      list.innerHTML = '<div class="kb-empty">输入关键词试试：白鹭、招潮蟹、秋茄、虎斑蝶…<br>点击结果跳转对应页面</div>';
+      return;
+    }
+    if (!hits.length) {
+      list.innerHTML = '<div class="kb-empty">站内没有匹配的物种<br>试试：白鹭、弹涂鱼、秋茄、招潮蟹</div>';
+      return;
+    }
+    list.innerHTML = '';
+    hits.forEach(function (e) {
+      var div = document.createElement('div');
+      div.className = 'kb-item';
+      var main = document.createElement('div');
+      var nm = document.createElement('div'); nm.className = 'k-name'; nm.textContent = e.n;
+      var sub = document.createElement('div'); sub.className = 'k-sub';
+      sub.textContent = (e.la || '') + (e.en ? ' · ' + e.en : '');
+      main.appendChild(nm); main.appendChild(sub);
+      var cat = document.createElement('span'); cat.className = 'k-cat'; cat.textContent = e.cat;
+      div.appendChild(main); div.appendChild(cat);
+      div.addEventListener('click', function () { kbJumpTo(e); });
+      list.appendChild(div);
+    });
+  }
+  input.addEventListener('input', function () { render(input.value); });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') { e.preventDefault(); var top = search(input.value)[0]; if (top) kbJumpTo(top); }
+  });
+})();
+</script>
+</body>
+</html>
