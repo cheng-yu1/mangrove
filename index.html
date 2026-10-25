@@ -1889,7 +1889,7 @@
         scanModel: "glm-4v-flash", // 免费识图模型
         chatModel: "glm-4-air",    // 聪明聊天模型
         timeout: 90000,
-        maxRetry: 1
+        maxRetry: 2 // 增加重试次数以应对 503
     };
 
     /* 网络层自动重试 */
@@ -2695,11 +2695,19 @@
                 showScanResult('识别超时了，请换一张更小的图片或稍后重试。', true);
                 return;
             }
+            
             if (err && err.isHttp) {
+                // 如果是 503 或 502，自动等待1秒后重试
+                if ((err.status === 503 || err.status === 502 || err.status === 504) && attempt < API_CONFIG.maxRetry) {
+                    return new Promise(function(res){setTimeout(res, 1000);}).then(function(){
+                        return callScanAPI(base64Data, attempt + 1);
+                    });
+                }
                 scanLoading.classList.remove('show');
                 showScanResult(httpFriendlyError(err.status), true);
                 return;
             }
+            
             if (attempt < API_CONFIG.maxRetry) return callScanAPI(base64Data, attempt + 1);
             scanLoading.classList.remove('show');
             showScanResult('网络连接失败，请检查网络后重试。', true);
@@ -3052,7 +3060,9 @@
         }).then(function(data) {
             if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
             if (data.choices && data.choices[0] && data.choices[0].message) {
-                var reply = String(data.choices[0].message.content || '').trim() || String(data.choices[0].message.reasoning_content || '').trim() || '（AI 没返回内容，请重新发送一次）';
+                // 修复了此处未定义 _m 的致命 Bug
+                var _m = data.choices[0].message || {};
+                var reply = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim() || '（AI 没返回内容，请重新发送一次）';
                 appendMessage('bot', reply);
                 chatHistory.push({ role: "assistant", content: reply });
             } else {
