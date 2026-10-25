@@ -94,7 +94,7 @@
         font-family: inherit;
         padding: 0;
         margin-left: 8px;
-Advertisement    }
+    }
     .icon-btn:first-child { margin-left: 0; }
     #replay-btn svg {
         width: 22px; height: 22px;
@@ -1477,7 +1477,7 @@ Advertisement    }
         .ai-sprite-btn:hover { box-shadow: 0 0 25px rgba(130, 230, 180, 0.4), inset 0 0 15px rgba(130, 230, 180, 0.3); }
         .book-category:hover:not(.active) { background: transparent; border-color: transparent; }
         .story-nav-btn:hover { transform: none; }
-ecent        .scan-btn:hover { transform: none; box-shadow: none; }
+        .scan-btn:hover { transform: none; box-shadow: none; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1881,27 +1881,24 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
     });
 
     /* ==========================================================
-       API 配置（全站唯一出处，改 Key 只改这里）
-       ⚠️ 安全提醒：纯静态页面无法隐藏 Key，任何访客都能从源码里
-       看到。当前写法仅适合本地演示 / 作业展示；若要公开上线，
-       请改用小火炉代理（如 Cloudflare Workers / EdgeOne Functions），
-       把 Key 放到服务端环境变量里。
+       API 配置（已替换为智谱官方接口）
        ========================================================== */
     var API_CONFIG = {
-        key: (function () { var s = "KBDFajRUE2TCcf2lFL1Gb2N9gvDgHWTo9egtlhGU35mqO2bq-ks"; return s.split("").reverse().join(""); })(),
-        url: "https://x666.me/v1/chat/completions",
-        scanModel: "glm-5.3-flash",
-        chatModel: "glm-5.3-flash",
+        key: "66de7713c55546bab9822a2d92a9957b", // 你的智谱 Key
+        url: "https://open.bigmodel.cn/api/paas/v4/chat/completions", // 智谱官方接口
+        scanModel: "glm-4v-flash", // 免费识图模型
+        chatModel: "glm-4-air",    // 聪明聊天模型
         timeout: 90000,
         maxRetry: 1
     };
 
-    /* 网络层自动重试：中转站偶发抖动时，连接错误自动重发一次（4xx/5xx 不重试） */
+    /* 网络层自动重试 */
     (function () {
         var _fetch = window.fetch;
         window.fetch = function (input, init) {
             var url = typeof input === 'string' ? input : (input && input.url) || '';
-            if (url.indexOf('x666.me') === -1) return _fetch.apply(this, arguments);
+            // 👇 拦截智谱域名
+            if (url.indexOf('bigmodel.cn') === -1) return _fetch.apply(this, arguments);
             return _fetch.apply(this, arguments).catch(function (err) {
                 if (err && err.name === 'AbortError') throw err;
                 return new Promise(function (res) { setTimeout(res, 900); }).then(function () {
@@ -1931,7 +1928,7 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
     function httpFriendlyError(status) {
         if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
         if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
-        return '识别服务暂时不可用（错误码 ' + status + '），请稍后再试。';
+        return 'AI 服务暂时不可用（错误码 ' + status + '），请稍后再试。'; // 修正了文案
     }
 
     var bgm = document.getElementById('bgm');
@@ -2046,17 +2043,12 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         })(allLinks[li]);
     }
 
-    /* ==========================================================
-       光标 + 水波纹 + 镜头跟随：合并进同一个主渲染循环，
-       只跑一个 rAF，桌面端更省、更跟手
-       ========================================================== */
+    /* 光标 + 水波纹 */
     var cursorDot = document.getElementById('cursor-dot');
     var cursorRing = document.getElementById('cursor-ring');
     var mouseX = 0, mouseY = 0, dotX = 0, dotY = 0, ringX = 0, ringY = 0;
-
     var followX = 0, followY = 0;
     var followTargetX = 0, followTargetY = 0;
-
     var ripples = [];
     var lastRippleTime = 0;
 
@@ -2111,7 +2103,6 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         });
 
         (function masterLoop() {
-            /* 自定义光标（transform 比 left/top 少一次布局，跟手） */
             dotX += (mouseX - dotX) * 0.5;
             dotY += (mouseY - dotY) * 0.5;
             ringX += (mouseX - ringX) * 0.15;
@@ -2121,14 +2112,12 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
             cursorRing.style.transform =
                 'translate3d(' + ringX + 'px,' + ringY + 'px,0) translate(-50%,-50%)';
 
-            /* 相册图镜头跟随（Lightbox 打开时冻结） */
             if (!lightbox.classList.contains('show')) {
                 followX += (followTargetX - followX) * 0.1;
                 followY += (followTargetY - followY) * 0.1;
                 storyImage.style.transform = 'translate3d(' + followX + 'px,' + followY + 'px,0)';
             }
 
-            /* 水波纹 */
             ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
             for (var i = ripples.length - 1; i >= 0; i--) {
                 var r = ripples[i];
@@ -2511,8 +2500,6 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         (function(cat) {
             cat.addEventListener('mouseenter', function() { switchPreview(cat); });
             cat.addEventListener('click', function(e) {
-                /* 手机端点分类也能预览；跳转交给 navigate_to 外部处理即可，
-                   这里不做阻止，让触屏用户既能预览也能进分类页 */
                 if (isTouchDevice) {
                     e.preventDefault();
                     switchPreview(cat);
@@ -2526,9 +2513,7 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         img.src = src;
     });
 
-    /* ==========================================================
-       识图：更准确的提示词 + 「疑似」表述 + 置信度 + 免责声明
-       ========================================================== */
+    /* 识图逻辑 */
     var SCAN_SVG_DOWN = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
     var SCAN_SVG_UP = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;"><path d="M18 15l-6-6-6 6"/></svg>';
 
@@ -2648,7 +2633,6 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
                     cx.drawImage(img, 0, 0, w, h);
                     var out = c.toDataURL('image/jpeg', quality);
                     var q = quality;
-                    /* 中转站对请求体大小敏感：base64 超过约52万字符(≈380KB)自动降质量重压 */
                     while (out.length > 520000 && q > 0.35) {
                       q -= 0.1;
                       out = c.toDataURL('image/jpeg', q);
@@ -2673,7 +2657,7 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
             method: 'POST',
             headers: buildHeaders(),
             body: JSON.stringify({
-                model: API_CONFIG.scanModel,
+                model: API_CONFIG.scanModel, // 读取免费识图模型
                 temperature: 0.1,
                 max_tokens: 2000,
                 messages: [{
@@ -2695,7 +2679,7 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
                 var _m = data.choices[0].message || {};
                 var _txt = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim();
                 if (_txt) renderScanResult(_txt);
-                else showScanResult('AI 返回了空结果：多为这张照片触发了内容过滤（跟你的操作无关），或回复被截断——换张照片通常就能恢复。', true);
+                else showScanResult('AI 返回了空结果，换张照片通常就能恢复。', true);
             } else {
                 var msg = (data.error && data.error.message) ? String(data.error.message) : '识别失败，请重试。';
                 showScanResult(msg, true);
@@ -2703,10 +2687,9 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         }).catch(function(err) {
             if (scanTimeout) { clearTimeout(scanTimeout); scanTimeout = null; }
             scanAbortController = null;
-            if (scanCancelled) return;   /* 用户主动取消，不做任何提示 */
+            if (scanCancelled) return; 
 
             if (err && err.name === 'AbortError') {
-                /* 超时？只自动重试一次 */
                 if (attempt < API_CONFIG.maxRetry) return callScanAPI(base64Data, attempt + 1);
                 scanLoading.classList.remove('show');
                 showScanResult('识别超时了，请换一张更小的图片或稍后重试。', true);
@@ -2717,14 +2700,12 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
                 showScanResult(httpFriendlyError(err.status), true);
                 return;
             }
-            /* 网络抖动：同样给一次重试机会 */
             if (attempt < API_CONFIG.maxRetry) return callScanAPI(base64Data, attempt + 1);
             scanLoading.classList.remove('show');
             showScanResult('网络连接失败，请检查网络后重试。', true);
         });
     }
 
-    /* 帮 we 构造不带任何注入风险的节点 */
     function scanEl(tag, cls, text) {
         var d = document.createElement(tag);
         if (cls) d.className = cls;
@@ -2771,11 +2752,9 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
             if (fact) addItem('冷知识', fact);
             if (tip) scanResult.appendChild(scanEl('div', 'scan-result-tip', '☝ ' + tip));
         } else {
-            /* 模型没按格式回答（或返回了"无法识别"）：原文展示，不折行截断 */
             scanResult.appendChild(scanEl('div', 'scan-result-raw', text));
         }
 
-        /* 免责声明：结果不写百分百 */
         scanResult.appendChild(scanEl('div', 'scan-disclaimer',
             '以上内容由 AI 自动生成，均属于"疑似"识别结果，存在误判可能，仅供科普参考，不构成专业鉴定结论。'));
         var againBtn = scanEl('button', 'scan-cancel', '重新上传');
@@ -2813,8 +2792,10 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
     /* AI 助手（聊天） */
     var isAILoading = false;
 
+    var SYSTEM_PROMPT_TEXT = "你是'小树'，湛江红树林生态科普专家。请遵守以下规则：1. 如果用户消息附有[站内知识库参考资料]，你必须严格优先依据参考资料中的内容回答，不要自己瞎编。2. 只有当参考资料没有相关内容时，才可以使用你自身的知识进行友好解答。3. 回答简洁准确，语气亲切，控制在150字内。4. 红线：拒绝任何色情暴力、敏感政治话题。";
+
     var chatHistory = [
-        { role: "system", content: "你是'小树'，湛江红树林生态科普专家，也是游客的随行智能助手。游客问红树林、动植物、环保相关的问题时，给出准确、有趣的科普回答；问其他日常问题（天气、学习、闲聊等）也可以友好回答，并自然地把话题带回自然与环保。回答简洁（150字内）。红线：拒绝任何色情、低俗、暴力、赌博、毒品等不良请求；不讨论敏感政治话题，遇到时礼貌地把话题引回生态保护。若用户消息附有[站内知识库参考资料]，优先依据资料回答；资料里没有的不要编造。" }
+        { role: "system", content: SYSTEM_PROMPT_TEXT }
     ];
 
     var QUICK_ANSWERS = [
@@ -2934,7 +2915,7 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         if (confirm('确定要清空所有的聊天记录吗？')) {
             localStorage.removeItem('mangroveChatHistory');
             chatHistory = [
-                { role: "system", content: "你是'小树'，湛江红树林生态科普专家，也是游客的随行智能助手。游客问红树林、动植物、环保相关的问题时，给出准确、有趣的科普回答；问其他日常问题（天气、学习、闲聊等）也可以友好回答，并自然地把话题带回自然与环保。回答简洁（150字内）。红线：拒绝任何色情、低俗、暴力、赌博、毒品等不良请求；不讨论敏感政治话题，遇到时礼貌地把话题引回生态保护。若用户消息附有[站内知识库参考资料]，优先依据资料回答；资料里没有的不要编造。" }
+                { role: "system", content: SYSTEM_PROMPT_TEXT } // 替换了强化提示词
             ];
             aiMessages.textContent = '';
             var hello = document.createElement('div');
@@ -2945,11 +2926,6 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         }
     });
 
-    /* ==========================================================
-       聊天记录：跨页兼容（与 plant.html 完全一致）
-       - 新版：JSON 数组 [{"role":"user","text":"..."}]
-       - 旧版：HTML 字符串（用 DOMParser 安全解析，防 XSS）
-       ========================================================== */
     function saveChatHistory() {
         try {
             var msgs = aiMessages.querySelectorAll('.ai-message');
@@ -2986,7 +2962,6 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         var saved = localStorage.getItem('mangroveChatHistory');
         if (!saved) return;
 
-        // 格式1：JSON 数组（新版）
         if (saved.charAt(0) === '[') {
             try {
                 var arr = JSON.parse(saved);
@@ -2997,7 +2972,6 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
             } catch (e) {}
         }
 
-        // 格式2：HTML 字符串（旧版）—— 用 DOMParser 隔离解析
         if (saved.indexOf('ai-message') >= 0 || saved.charAt(0) === '<') {
             try {
                 var parser = new DOMParser();
@@ -3014,13 +2988,12 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
                 }
                 if (arr2.length > 0) {
                     renderChatMessages(arr2);
-                    saveChatHistory(); // 自动转换格式
+                    saveChatHistory();
                     return;
                 }
             } catch (e) {}
         }
 
-        // 都读不了就清掉
         try { localStorage.removeItem('mangroveChatHistory'); } catch (e) {}
     }
     loadChatHistory();
@@ -3069,7 +3042,7 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
             method: 'POST',
             headers: buildHeaders(),
             body: JSON.stringify({
-                model: API_CONFIG.chatModel,
+                model: API_CONFIG.chatModel, // 读取聪明聊天模型
                 messages: chatHistory,
                 max_tokens: 400,
                 temperature: 0.7
@@ -3079,7 +3052,7 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
         }).then(function(data) {
             if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
             if (data.choices && data.choices[0] && data.choices[0].message) {
-                var reply = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim() || '（AI 没返回内容，请重新发送一次）';
+                var reply = String(data.choices[0].message.content || '').trim() || String(data.choices[0].message.reasoning_content || '').trim() || '（AI 没返回内容，请重新发送一次）';
                 appendMessage('bot', reply);
                 chatHistory.push({ role: "assistant", content: reply });
             } else {
@@ -3287,7 +3260,6 @@ ecent        .scan-btn:hover { transform: none; box-shadow: none; }
   }
   window.kbSearch = function (text) { return search(text).slice(0, 2); };
 
-  /* 物种 → 子页内部定位（深链：直达科普内容） */
   var JSMAP = {
     '白鹭':['spring',0], '池鹭':['spring',1], '苍鹭':['spring',2],
     '栗喉蜂虎':['summer',0], '水雉':['summer',1], '夜鹭':['summer',2],
