@@ -1881,15 +1881,24 @@
     });
 
     /* ==========================================================
-       API 配置（已替换为智谱官方接口）
+       双通道 API 配置 (智谱优先，备用无限制接口)
        ========================================================== */
     var API_CONFIG = {
-        key: "66de7713c55546bab9822a2d92a9957b", // 你的智谱 Key
-        url: "https://open.bigmodel.cn/api/paas/v4/chat/completions", // 智谱官方接口
-        scanModel: "glm-4v-flash", // 免费识图模型
-        chatModel: "glm-4-air",    // 聪明聊天模型
-        timeout: 90000,
-        maxRetry: 2 // 增加重试次数以应对 503
+        // 智谱官方通道（可能遇到 503 拥堵或 CORS 限制）
+        zhipu: {
+            key: "66de7713c55546bab9822a2d92a9957b",
+            url: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+            scanModel: "glm-4v-flash",
+            chatModel: "glm-4-air"
+        },
+        // 公益备用通道（完全免费，无需注册，支持跨域，速度极快但识图能力稍弱）
+        fallback: {
+            url: "https://text.pollinations.ai/openai", // 文本
+            scanUrl: "https://image.pollinations.ai/prompt/", // 备用识图（仅做简单容错）
+            chatModel: "openai"
+        },
+        timeout: 60000,
+        maxRetry: 2
     };
 
     /* 网络层自动重试 */
@@ -1897,11 +1906,10 @@
         var _fetch = window.fetch;
         window.fetch = function (input, init) {
             var url = typeof input === 'string' ? input : (input && input.url) || '';
-            // 👇 拦截智谱域名
-            if (url.indexOf('bigmodel.cn') === -1) return _fetch.apply(this, arguments);
+            if (url.indexOf('bigmodel.cn') === -1 && url.indexOf('pollinations.ai') === -1) return _fetch.apply(this, arguments);
             return _fetch.apply(this, arguments).catch(function (err) {
                 if (err && err.name === 'AbortError') throw err;
-                return new Promise(function (res) { setTimeout(res, 900); }).then(function () {
+                return new Promise(function (res) { setTimeout(res, 1000); }).then(function () {
                     return _fetch.call(window, input, init);
                 });
             });
@@ -1911,11 +1919,10 @@
     function buildHeaders() {
         return {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + API_CONFIG.key
+            'Authorization': 'Bearer ' + API_CONFIG.zhipu.key
         };
     }
 
-    /* 统一的响应处理：区分 HTTP 错误 / JSON 解析失败 / 断网 */
     function readApiResponse(response) {
         if (!response.ok) {
             var e = new Error('HTTP ' + response.status);
@@ -1928,7 +1935,7 @@
     function httpFriendlyError(status) {
         if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
         if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
-        return 'AI 服务暂时不可用（错误码 ' + status + '），请稍后再试。'; // 修正了文案
+        return '服务器繁忙（错误码 ' + status + '），请稍后重试。';
     }
 
     var bgm = document.getElementById('bgm');
@@ -2646,6 +2653,7 @@
         });
     }
 
+    // 通过智谱进行识图
     function callScanAPI(base64Data, attempt) {
         attempt = attempt || 0;
         scanAbortController = new AbortController();
@@ -2653,11 +2661,11 @@
             if (scanAbortController) scanAbortController.abort();
         }, API_CONFIG.timeout);
 
-        return fetch(API_CONFIG.url, {
+        return fetch(API_CONFIG.zhipu.url, {
             method: 'POST',
             headers: buildHeaders(),
             body: JSON.stringify({
-                model: API_CONFIG.scanModel, // 读取免费识图模型
+                model: API_CONFIG.zhipu.scanModel, 
                 temperature: 0.1,
                 max_tokens: 2000,
                 messages: [{
@@ -2697,9 +2705,9 @@
             }
             
             if (err && err.isHttp) {
-                // 如果是 503 或 502，自动等待1秒后重试
-                if ((err.status === 503 || err.status === 502 || err.status === 504) && attempt < API_CONFIG.maxRetry) {
-                    return new Promise(function(res){setTimeout(res, 1000);}).then(function(){
+                // 遇到 503 重试
+                if ((err.status === 503 || err.status === 502 || err.status === 504) && attempt < 3) {
+                    return new Promise(function(res){setTimeout(res, 2000);}).then(function(){
                         return callScanAPI(base64Data, attempt + 1);
                     });
                 }
@@ -2710,7 +2718,7 @@
             
             if (attempt < API_CONFIG.maxRetry) return callScanAPI(base64Data, attempt + 1);
             scanLoading.classList.remove('show');
-            showScanResult('网络连接失败，请检查网络后重试。', true);
+            showScanResult('识别失败（可能是官方服务器太挤了），请稍后重试。', true);
         });
     }
 
@@ -2923,7 +2931,7 @@
         if (confirm('确定要清空所有的聊天记录吗？')) {
             localStorage.removeItem('mangroveChatHistory');
             chatHistory = [
-                { role: "system", content: SYSTEM_PROMPT_TEXT } // 替换了强化提示词
+                { role: "system", content: SYSTEM_PROMPT_TEXT } 
             ];
             aiMessages.textContent = '';
             var hello = document.createElement('div');
@@ -3016,6 +3024,31 @@
         return div;
     }
 
+    // 使用备用免费接口进行聊天
+    function fallbackChatAPI(text, loadingDiv) {
+        // Pollinations 的纯前端无限制文本接口
+        var prompt = "你叫小树，是湛江红树林AI导游。回答亲切简洁。用户问：" + text;
+        var encodedPrompt = encodeURIComponent(prompt);
+        
+        fetch("https://text.pollinations.ai/" + encodedPrompt)
+            .then(function(response) { return response.text(); })
+            .then(function(reply) {
+                if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
+                if (reply && reply.trim()) {
+                    appendMessage('bot', reply.trim());
+                    chatHistory.push({ role: "assistant", content: reply.trim() });
+                } else {
+                    appendMessage('bot', '服务器太忙了，请稍后重试。');
+                }
+            }).catch(function() {
+                if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
+                appendMessage('bot', '由于网络拥堵，服务暂时不可用。请稍后再试。');
+            }).finally(function() {
+                isAILoading = false;
+                saveChatHistory();
+            });
+    }
+
     function sendAIMessage() {
         var text = aiInput.value.trim();
         if (!text || isAILoading) return;
@@ -3046,11 +3079,11 @@
         aiMessages.appendChild(loadingDiv);
         aiMessages.scrollTop = aiMessages.scrollHeight;
 
-        fetch(API_CONFIG.url, {
+        fetch(API_CONFIG.zhipu.url, {
             method: 'POST',
             headers: buildHeaders(),
             body: JSON.stringify({
-                model: API_CONFIG.chatModel, // 读取聪明聊天模型
+                model: API_CONFIG.zhipu.chatModel, 
                 messages: chatHistory,
                 max_tokens: 400,
                 temperature: 0.7
@@ -3060,7 +3093,6 @@
         }).then(function(data) {
             if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
             if (data.choices && data.choices[0] && data.choices[0].message) {
-                // 修复了此处未定义 _m 的致命 Bug
                 var _m = data.choices[0].message || {};
                 var reply = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim() || '（AI 没返回内容，请重新发送一次）';
                 appendMessage('bot', reply);
@@ -3070,15 +3102,16 @@
                 appendMessage('bot', emsg);
             }
         }).catch(function(err) {
-            if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
-            if (err && err.isHttp) {
-                appendMessage('bot', httpFriendlyError(err.status));
-            } else {
-                appendMessage('bot', '网络连接失败，请检查网络。');
+            // 如果官方 API 报错（网络错误、503、CORS 拦截等），自动切换到无敌备用免费通道！
+            console.warn("智谱接口失败，切换到备用通道", err);
+            fallbackChatAPI(text, loadingDiv);
+        }).finally(function() {
+            // 这里不设置 isAILoading = false，交给 fallbackChatAPI 处理
+            if (loadingDiv.parentNode && !isAILoading) {
+                // 如果智谱成功了，finally会走到这里
+                isAILoading = false;
+                saveChatHistory();
             }
-        })['finally'](function() {
-            isAILoading = false;
-            saveChatHistory();
         });
     }
     function appendMessage(role, text) {
