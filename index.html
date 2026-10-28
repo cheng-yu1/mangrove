@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex,nofollow,noarchive,nosnippet">
+<meta name="referrer" content="no-referrer">
 <title>红树林百科</title>
 <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -14,48 +16,11 @@
         background: #071a12;
         color: #fff;
         -webkit-font-smoothing: antialiased;
-        cursor: none;
         -webkit-tap-highlight-color: transparent;
         -webkit-text-size-adjust: 100%;
     }
-    body.lock-scroll { overflow: hidden; }
-
-    #cursor-dot {
-        position: fixed; top: 0; left: 0;
-        width: 10px; height: 10px;
-        border-radius: 50%;
-        background: rgba(255, 255, 255, 0.95);
-        box-shadow: 0 0 12px rgba(255, 255, 255, 0.95), 0 0 30px rgba(255, 200, 150, 0.8);
-        pointer-events: none;
-        z-index: 9999;
-        transform: translate(-50%, -50%);
-        will-change: transform;
-        transition: width 0.3s ease, height 0.3s ease, background 0.3s ease;
-    }
-    #cursor-ring {
-        position: fixed; top: 0; left: 0;
-        width: 40px; height: 40px;
-        border-radius: 50%;
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        pointer-events: none;
-        z-index: 9998;
-        transform: translate(-50%, -50%);
-        will-change: transform;
-        transition: width 0.3s ease, height 0.3s ease, border-color 0.3s ease;
-    }
-    body.hover-interactive #cursor-dot { width: 18px; height: 18px; background: rgba(130, 230, 180, 1); }
-    body.hover-interactive #cursor-ring { width: 60px; height: 60px; border-color: rgba(130, 230, 180, 0.9); }
-    @media (hover: none), (pointer: coarse) {
-        #cursor-dot, #cursor-ring { display: none !important; }
-        body, a, button { cursor: auto !important; }
-    }
-
-    #ripple-canvas {
-        position: fixed; top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        z-index: 9997;
-        pointer-events: none;
-    }
+    body.lock-scroll { overflow: hidden; height: 100vh; }
+    html.lock-scroll-html { overflow: hidden; height: 100vh; }
 
     .flash-effect {
         position: fixed; top: 0; left: 0;
@@ -85,7 +50,7 @@
         border: 1px solid rgba(255,255,255,0.5);
         color: white;
         font-size: 20px;
-        cursor: none;
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -274,7 +239,7 @@
         z-index: 10;
         width: 140px; height: 140px;
         border: 0; background: transparent;
-        cursor: none;
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -317,34 +282,76 @@
     .shutter:hover .shutter-ring { width: 88px; height: 88px; top: -6px; border-color: rgba(255, 255, 255, 0.95); }
     .shutter:hover .shutter-inner { transform: translateX(-50%) scale(1.08); box-shadow: 0 0 44px rgba(255, 255, 255, 0.55); }
 
+    /* 跳过按钮 */
+    .skip-btn {
+        position: absolute;
+        top: 40px; right: 40px;
+        z-index: 20;
+        padding: 8px 20px;
+        border-radius: 30px;
+        background: rgba(0,0,0,0.55);
+        border: 1px solid rgba(255,255,255,0.4);
+        color: #fff;
+        font-size: 12px;
+        letter-spacing: 0.1em;
+        cursor: pointer;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+        font-family: inherit;
+    }
+    .cinema-hero[data-state="recording"] .skip-btn,
+    .cinema-hero[data-state="paused"] .skip-btn {
+        opacity: 1;
+        visibility: visible;
+    }
+    .skip-btn:hover {
+        background: rgba(0,0,0,0.8);
+        border-color: #fff;
+    }
+
     .pause-indicator {
-        position: absolute; top: 50%; left: 50%;
+        position: absolute; top: 22%; left: 50%;
         transform: translate(-50%, -50%) scale(0.9);
         z-index: 15;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 80px; height: 80px;
-        border-radius: 50%;
-        background: rgba(5, 10, 8, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.15);
+        gap: 7px;
+        padding: 11px 24px;
+        border-radius: 40px;
+        background: rgba(5, 10, 8, 0.78);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        -webkit-backdrop-filter: blur(6px);
+        backdrop-filter: blur(6px);
         opacity: 0; pointer-events: none;
         transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
     }
     .cinema-hero[data-state="paused"] .pause-indicator { opacity: 1; transform: translate(-50%, -50%) scale(1); }
-    .pause-indicator::before, .pause-indicator::after { content: ''; width: 5px; height: 22px; background: rgba(255, 255, 255, 0.92); border-radius: 1px; }
-    .pause-indicator::before { margin-right: 8px; }
+    .pause-indicator::before, .pause-indicator::after {
+        content: ''; width: 4px; height: 17px;
+        background: rgba(255, 255, 255, 0.92);
+        border-radius: 1px;
+    }
 
     .scroll-cue {
         position: absolute; bottom: 44px; left: 50%;
         transform: translateX(-50%) translateY(12px);
-        z-index: 10;
+        z-index: 11;
         display: flex;
         flex-direction: column;
         align-items: center;
-        font-size: 11px; letter-spacing: 0.45em; padding-left: 0.45em;
-        color: rgba(255, 255, 255, 0.75);
+        padding: 11px 24px 13px;
+        border-radius: 40px;
+        background: rgba(5, 10, 8, 0.38);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+        font-size: 11px; letter-spacing: 0.45em;
+        padding-left: calc(24px + 0.45em);
+        color: rgba(255, 255, 255, 0.82);
         text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+        box-shadow: 0 10px 30px rgba(0,0,0,.35);
         opacity: 0; pointer-events: none;
         transition: opacity 1s ease, transform 1s cubic-bezier(0.16, 1, 0.3, 1);
     }
@@ -390,7 +397,7 @@
         border-radius: 10px; overflow: hidden;
         box-shadow: 0 40px 100px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(130, 230, 180, 0.15);
         background: linear-gradient(135deg, rgba(10, 26, 18, 0.9) 0%, rgba(6, 18, 12, 0.95) 100%);
-        cursor: none;
+        cursor: zoom-in;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -403,7 +410,6 @@
         object-fit: contain; display: block;
         user-select: none;
         -webkit-user-drag: none; -webkit-touch-callout: none;
-        will-change: transform;
         transition: opacity 0.5s ease;
     }
     .story-image-frame img.leaving { opacity: 0; }
@@ -442,12 +448,13 @@
         border: 1px solid rgba(130, 230, 180, 0.4);
         border-radius: 40px;
         color: #ffffff; font-size: 12px; letter-spacing: 0.15em;
-        cursor: none;
+        cursor: pointer;
         transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         font-family: inherit; white-space: nowrap;
         margin-left: 8px;
     }
     .story-nav-btn:first-child { margin-left: 0; }
+    .story-nav-btn:hover { background: rgba(130, 230, 180, 0.22); }
     .story-nav-btn svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.8; fill: none; stroke-linecap: round; stroke-linejoin: round; margin-right: 6px; }
     .story-nav-btn:last-child svg { margin-right: 0; margin-left: 6px; }
 
@@ -635,7 +642,7 @@
         transform-style: preserve-3d;
         transform: rotateY(0deg);
         transition: transform 1.2s cubic-bezier(0.4, 0, 0.2, 1);
-        cursor: none;
+        cursor: pointer;
         z-index: 10;
         will-change: transform;
     }
@@ -988,27 +995,46 @@
     }
 
     .book-hint {
-        margin-top: 24px;
-        display: flex;
-        flex-direction: column;
+        margin-top: 0;
+        margin-bottom: 24px;
+        display: inline-flex;
         align-items: center;
-        font-size: 12px; letter-spacing: 0.5em; padding-left: 0.5em;
-        color: rgba(255, 255, 255, 0.75);
+        gap: 10px;
+        padding: 12px 26px;
+        border-radius: 40px;
+        background: linear-gradient(135deg, rgba(130, 230, 180, 0.16), rgba(201, 151, 63, 0.14));
+        border: 1px solid rgba(130, 230, 180, 0.5);
+        color: #e6fff4;
+        font-size: 13px;
+        letter-spacing: 0.2em;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 22px rgba(130, 230, 180, 0.16);
         text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
-        transition: opacity 0.5s ease;
-        cursor: none;
+        cursor: pointer;
+        animation: hintPulse 2.6s ease-in-out infinite;
+        transition: opacity 0.5s ease, transform 0.5s ease;
+        -webkit-user-select: none;
+        user-select: none;
     }
-    .book-hint.hide { opacity: 0; pointer-events: none; }
+    @keyframes hintPulse {
+        0%, 100% {
+            box-shadow: 0 12px 36px rgba(0, 0, 0, 0.5), 0 0 22px rgba(130, 230, 180, 0.16);
+            transform: translateY(0);
+        }
+        50% {
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.55), 0 0 40px rgba(130, 230, 180, 0.38);
+            transform: translateY(-3px);
+        }
+    }
+    .book-hint.hide { opacity: 0; pointer-events: none; transform: scale(0.94); }
     .book-hint-arrow {
-        width: 16px; height: 16px;
+        width: 15px; height: 15px;
         stroke: currentColor; stroke-width: 1.8; fill: none;
         stroke-linecap: round; stroke-linejoin: round;
         animation: hintBounce 2s ease-in-out infinite;
-        margin-top: 10px;
     }
     @keyframes hintBounce {
-        0%, 100% { transform: translateY(0); opacity: 0.5; }
-        50%      { transform: translateY(6px); opacity: 1; }
+        0%, 100% { transform: translateY(0); opacity: 0.55; }
+        50%      { transform: translateY(5px); opacity: 1; }
     }
 
     .scan-card {
@@ -1197,7 +1223,7 @@
         background: rgba(130, 230, 180, 0.15);
         border: 1px solid rgba(130, 230, 180, 0.6);
         color: #82e6b4; font-size: 13px; font-weight: bold; letter-spacing: 0.1em;
-        cursor: none; white-space: nowrap;
+        cursor: pointer; white-space: nowrap;
         transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
         opacity: 0; visibility: hidden;
         transform: translateX(20px);
@@ -1212,7 +1238,7 @@
         background: radial-gradient(circle at 35% 30%, #a4f3c9, #2a8c5e, #071a12);
         border: 2px solid rgba(130, 230, 180, 0.8);
         box-shadow: 0 0 25px rgba(130, 230, 180, 0.4), inset 0 0 15px rgba(130, 230, 180, 0.3);
-        cursor: none;
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -1378,7 +1404,9 @@
         .end-credit::before, .end-credit::after { width: 170px; }
         .shutter-ring { width: 68px; height: 68px; }
         .shutter-inner { width: 34px; height: 34px; top: 17px; }
-        .scroll-cue { bottom: 32px; }
+        .scroll-cue { bottom: 32px; font-size: 10px; }
+        .pause-indicator { top: 18%; padding: 9px 20px; }
+        .skip-btn { top: 20px; right: 20px; padding: 6px 16px; font-size: 11px; }
         .bottom-right-group { bottom: 20px; right: 14px; }
 
         .baike-story-scroll { height: auto; min-height: 100vh; overflow: visible; padding: 100px 6% 120px; align-items: flex-start; }
@@ -1389,6 +1417,7 @@
         .story-text h2 { font-size: 26px; }
         .story-text p { font-size: 13px; }
         .story-text .tag { margin-bottom: 20px; font-size: 11px; }
+        .scroll-cue--story { bottom: 26px; }
 
         .library-section { height: auto; min-height: 100vh; overflow: visible; padding: 80px 6% 100px; }
         .library-content { flex-direction: column; gap: 40px; }
@@ -1401,14 +1430,15 @@
         .book-preview-caption .cp-desc { font-size: 10px; }
         .book-title-cn { font-size: 20px; }
         .book-category-name { font-size: 12px; }
+        .book-hint { font-size: 12px; padding: 10px 20px; letter-spacing: 0.14em; margin-bottom: 20px; }
 
         .lightbox-close { top: 14px; right: 14px; width: 38px; height: 38px; font-size: 16px; }
         .lightbox-hint { bottom: 16px; font-size: 10px; padding: 6px 14px; }
 
         .ai-assistant-container { bottom: 90px; right: 14px; gap: 6px; }
-        .ai-action-row { flex-direction: column; align-items: center; gap: 10px; }
+        .ai-action-row { flex-direction: column; align-items: flex-end; gap: 8px; }
         .ai-sprite-box { order: 1; display: flex; flex-direction: column; align-items: center; }
-        .ai-text-btn { order: 2; transform: translateY(14px); padding: 9px 16px; font-size: 12px; letter-spacing: 0.08em; }
+        .ai-text-btn { order: 2; transform: translateY(10px); padding: 8px 16px; font-size: 12px; letter-spacing: 0.08em; }
         .ai-text-btn.show { transform: translateY(0); }
 
         .ai-sprite-btn { width: 56px; height: 56px; }
@@ -1447,22 +1477,16 @@
         .book-clip.open .book { margin-left: 0; }
         .book-title-cn { font-size: 16px; }
         .book-category-name { font-size: 10px; }
+        .book-hint { font-size: 11px; padding: 9px 16px; letter-spacing: 0.1em; margin-bottom: 16px; }
 
         .ai-assistant-container { bottom: 82px; right: 12px; }
         .ai-sprite-btn { width: 50px; height: 50px; }
-        .ai-text-btn { padding: 8px 14px; font-size: 11.5px; }
+        .ai-text-btn { padding: 7px 14px; font-size: 11px; }
         .ai-label { font-size: 9px; }
         .ai-chat-box { width: calc(100vw - 20px); height: 50vh; right: 10px; bottom: 212px; }
         .bottom-right-group { bottom: 16px; right: 12px; }
         .icon-btn { width: 40px; height: 40px; font-size: 16px; }
         #replay-btn svg { width: 16px; height: 16px; }
-    }
-
-    @media (hover: none) and (pointer: coarse) {
-        .ai-sprite-btn:hover { box-shadow: 0 0 25px rgba(130, 230, 180, 0.4), inset 0 0 15px rgba(130, 230, 180, 0.3); }
-        .book-category:hover:not(.active) { background: transparent; border-color: transparent; }
-        .story-nav-btn:hover { transform: none; }
-        .scan-btn:hover { transform: none; box-shadow: none; }
     }
 
     @media (prefers-reduced-motion: reduce) {
@@ -1472,6 +1496,7 @@
         .end-credit { filter: none !important; }
         .library-bg { transform: none !important; opacity: 1 !important; }
     }
+
     /* ==================== 站内搜索 + 私有知识库（RAG） ==================== */
     .kb-box {
       position: fixed; z-index: 1000002;
@@ -1518,19 +1543,41 @@
       background: rgba(127,227,192,0.08); border: 1px solid rgba(127,227,192,0.25); opacity: .85;
     }
     .kb-empty { padding: 16px 14px; font-size: 12px; opacity: .55; text-align: center; letter-spacing: .04em; line-height: 1.8; }
-    .kb-col { flex-shrink: 0; cursor: pointer; opacity: .7; font-weight: 700; padding: 0 3px; }
+    .kb-col { position: relative; flex-shrink: 0; cursor: pointer; opacity: .7; font-weight: 700; padding: 0 3px; }
     .kb-col:hover { opacity: 1; }
+    
+    /* 搜索栏悬浮提示 */
+    .kb-col[data-tip]::after {
+        content: attr(data-tip);
+        position: absolute;
+        top: 100%;
+        right: 0;
+        background: rgba(0,0,0,0.85);
+        color: #fff;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 10px;
+        font-weight: normal;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s;
+        transform: translateY(4px);
+        z-index: 10;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    .kb-col[data-tip]:hover::after { opacity: 1; }
+
     .kb-box.collapsed #kbInput, .kb-box.collapsed .kb-list { display: none; }
     .kb-box.collapsed { width: auto; max-width: calc(100vw - 60px); }
     .kb-box.collapsed .kb-empty { display: none; }
     @media (max-width: 600px) { .kb-box { width: calc(100vw - 20px); } .kb-list { max-height: 46vh; } }
+
+    @media print { body { display: none !important; } }
 </style>
 </head>
 <body>
 
-<div id="cursor-dot"></div>
-<div id="cursor-ring"></div>
-<canvas id="ripple-canvas"></canvas>
 <div class="flash-effect" id="flash-effect"></div>
 
 <!-- ==================== 第一屏 ==================== -->
@@ -1591,10 +1638,12 @@
         <span class="shutter-label">点击开拍</span>
     </button>
 
+    <button class="skip-btn" id="skipBtn">跳过片头</button>
+
     <div class="pause-indicator" aria-hidden="true"></div>
 
     <div class="scroll-cue" id="scrollCue" aria-hidden="true">
-        <span>向下滑动</span>
+        <span>向下滑动 · 继续探索</span>
         <svg class="scroll-cue-arrow" viewBox="0 0 24 24">
             <path d="M12 5v14M5 12l7 7 7-7"/>
         </svg>
@@ -1650,6 +1699,13 @@
             </div>
         </div>
     </div>
+
+    <div class="scroll-cue scroll-cue--story" id="storyScrollCue" aria-hidden="true">
+        <span>继续下滑 · 翻开百科</span>
+        <svg class="scroll-cue-arrow" viewBox="0 0 24 24">
+            <path d="M12 5v14M5 12l7 7 7-7"/>
+        </svg>
+    </div>
 </section>
 
 <!-- ==================== Lightbox ==================== -->
@@ -1669,6 +1725,13 @@
 
     <div class="library-content">
         <div class="book-area">
+            <div class="book-hint" id="bookHint">
+                <span>点开这本书 · 查看全部分类</span>
+                <svg class="book-hint-arrow" viewBox="0 0 24 24">
+                    <path d="M12 5v14M5 12l7 7 7-7"/>
+                </svg>
+            </div>
+
             <div class="book-clip" id="bookClip">
                 <div class="book" id="book">
                     <div class="book-cover" id="bookCover">
@@ -1723,13 +1786,6 @@
                         <button class="book-close" id="bookClose" aria-label="关闭">✕</button>
                     </div>
                 </div>
-            </div>
-
-            <div class="book-hint" id="bookHint">
-                <span>点击查看更多</span>
-                <svg class="book-hint-arrow" viewBox="0 0 24 24">
-                    <path d="M12 5v14M5 12l7 7 7-7"/>
-                </svg>
             </div>
         </div>
 
@@ -1853,10 +1909,69 @@
 <div class="page-transition enter" id="pageTransition"></div>
 
 <script>
-(function() {
+/* =========================================================================
+   0. 反爬 / 反自动化 / 障眼法
+   ========================================================================= */
+(function () {
     'use strict';
 
-    var isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    // 拦截 file:// 协议，防止跨域导致的各种报错
+    if (window.location.protocol === 'file:') {
+        document.documentElement.innerHTML =
+          '<head><meta charset="utf-8"><title>环境错误</title></head>' +
+          '<body style="margin:0;background:#071a12;color:#fff;display:flex;flex-direction:column;' +
+          'align-items:center;justify-content:center;height:100vh;font-family:sans-serif;' +
+          'font-size:16px;letter-spacing:.1em;text-align:center;line-height:2;padding:20px;">' +
+          '<div style="font-size:24px;color:#82e6b4;margin-bottom:20px;">⚠️ 检测到直接双击打开</div>' +
+          '<div>浏览器安全策略（CORS）会拦截 AI 接口请求，导致“API 密钥无效”等报错。<br>' +
+          '请使用 <b>VS Code 的 Live Server</b> 插件打开，或直接部署到 <b>GitHub Pages</b> 后访问。</div></body>';
+        return;
+    }
+
+    var ua = navigator.userAgent || '';
+    var botRe = /(bot|crawler|spider|scrapy|puppeteer|playwright|selenium|phantomjs|headlesschrome|python-requests|curl\/|wget\/|httpclient)/i;
+    var isBot = navigator.webdriver === true || botRe.test(ua);
+    window.__BLOCKED__ = isBot;
+
+    if (isBot) {
+        try {
+            document.documentElement.innerHTML =
+              '<head><meta charset="utf-8"><title>403</title></head>' +
+              '<body style="margin:0;background:#071a12;color:#82e6b4;display:flex;' +
+              'align-items:center;justify-content:center;height:100vh;font-family:sans-serif;' +
+              'font-size:16px;letter-spacing:.15em;text-align:center;line-height:2;">' +
+              '403 · 检测到自动化访问<br>本页内容禁止抓取</body>';
+        } catch (e) {}
+        return;
+    }
+
+    document.addEventListener('contextmenu', function (e) { e.preventDefault(); }, false);
+    document.addEventListener('keydown', function (e) {
+        var k = (e.key || '').toLowerCase();
+        if (k === 'f12') { e.preventDefault(); return false; }
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && ['i', 'j', 'c', 'k'].indexOf(k) > -1) {
+            e.preventDefault(); return false;
+        }
+        if ((e.ctrlKey || e.metaKey) && ['u', 's', 'p'].indexOf(k) > -1) {
+            e.preventDefault(); return false;
+        }
+    }, false);
+    document.addEventListener('dragstart', function (e) {
+        if (e.target && e.target.tagName === 'IMG') e.preventDefault();
+    }, false);
+    document.addEventListener('copy', function (e) {
+        var t = e.target;
+        if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA')) return;
+        e.preventDefault();
+    }, false);
+})();
+</script>
+
+<script>
+(function() {
+    'use strict';
+    if (window.__BLOCKED__) return;
+
     if ('scrollRestoration' in history) history.scrollRestoration = 'manual';
 
     ['bg2.jpg', 'bg3.jpg', 'bg4.jpg', 'bg5.jpg'].forEach(function(src) {
@@ -1864,52 +1979,160 @@
     });
 
     /* ==========================================================
-       API 配置 (智谱官方直连，稳定可靠)
+       1. API 配置与防爬限制
        ========================================================== */
+    // 障眼法：将密钥拆分为3段，直接写在不同的假变量里
+    var _secA = "sk-rzfnpnsadyuikhaunm";
+    var _secB = "quugxxmokiwfsvjulir";
+    var _secC = "bgkinqlmtnu";
+    function getSecretKey() {
+        var _fakeCheck = "something_random"; 
+        if (_fakeCheck === "something_random") {
+            return _secA + _secB + _secC;
+        }
+        return "invalid_key"; // 永远走不到这里
+    }
+
+    // 本地限流器：每个浏览器每天最多 20句聊天、5次识图
+    function checkQuota(type) {
+        try {
+            var today = new Date().toISOString().split('T')[0];
+            var quota = JSON.parse(localStorage.getItem('mg_quota') || '{}');
+            if (quota.date !== today) quota = { date: today, chat: 0, scan: 0 };
+            if (type === 'chat' && quota.chat >= 20) return false;
+            if (type === 'scan' && quota.scan >= 5) return false;
+            return true;
+        } catch(e) { return true; }
+    }
+    function addQuota(type) {
+        try {
+            var today = new Date().toISOString().split('T')[0];
+            var quota = JSON.parse(localStorage.getItem('mg_quota') || '{}');
+            if (quota.date !== today) quota = { date: today, chat: 0, scan: 0 };
+            if (type === 'chat') quota.chat++;
+            if (type === 'scan') quota.scan++;
+            localStorage.setItem('mg_quota', JSON.stringify(quota));
+        } catch(e) {}
+    }
+
     var API_CONFIG = {
-        key: "66de7713c55546bab9822a2d92a9957b",
-        url: "https://open.bigmodel.cn/api/paas/v4/chat/completions", // 修改为官方直连地址
-        scanModel: "glm-4v-flash",
-        chatModel: "glm-4-flash",
-        chatFallback: "glm-4-air",
-        timeout: 45000,
-        chatTimeout: 30000,
-        maxRetry: 2
+        urls: [
+            'https://api.siliconflow.cn/v1/chat/completions'
+        ],
+        // 使用更聪明的 VL 模型
+        scanModels: ['Qwen/Qwen2-VL-7B-Instruct', 'Qwen/Qwen2.5-VL-7B-Instruct'],
+        chatModels: ['Qwen/Qwen2.5-7B-Instruct', 'Qwen/Qwen2-7B-Instruct'],
+        scanTimeout: 60000,
+        chatTimeout: 45000,
+        maxTokensScan: 1000,
+        maxTokensChat: 500
     };
 
-    function buildHeaders() {
+    function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+    function authHeaders() {
         return {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + API_CONFIG.key
+            'Authorization': 'Bearer ' + getSecretKey()
         };
     }
 
-    function readApiResponse(response) {
-        if (!response.ok) {
-            var e = new Error('HTTP ' + response.status);
-            e.isHttp = true;
-            e.status = response.status;
-            throw e;
+    function callAPI(opts) {
+        var modelList = (opts.models && opts.models.length) ? opts.models.slice() : [''];
+        var mi = 0, ei = 0, retried429 = 0;
+
+        function nextModel() {
+            mi++;
+            ei = 0;
+            if (mi >= modelList.length) {
+                var e = new Error('ALL_FAILED');
+                e.allFailed = true;
+                return Promise.reject(e);
+            }
+            return attempt();
         }
-        return response.json();
+
+        function doFetch() {
+            var url = API_CONFIG.urls[ei];
+            var controller = new AbortController();
+            var timer = setTimeout(function() {
+                try { controller.abort(); } catch (e) {}
+            }, opts.timeout || 45000);
+
+            var body = {
+                model: modelList[mi],
+                messages: opts.messages,
+                max_tokens: opts.max_tokens || 500,
+                temperature: (opts.temperature != null) ? opts.temperature : 0.7,
+                stream: false
+            };
+
+            return fetch(url, {
+                method: 'POST',
+                headers: authHeaders(),
+                body: JSON.stringify(body),
+                signal: controller.signal,
+                mode: 'cors',
+                credentials: 'omit'
+            }).then(function(res) {
+                clearTimeout(timer);
+                if (!res.ok) {
+                    var e = new Error('HTTP ' + res.status);
+                    e.status = res.status;
+                    e.isHttp = true;
+                    return res.text().then(function(t) {
+                        try { e.body = t.slice(0, 300); } catch (x) {}
+                        throw e;
+                    }, function() { throw e; });
+                }
+                return res.json();
+            }, function(err) {
+                clearTimeout(timer);
+                throw err;
+            });
+        }
+
+        function attempt() {
+            if (ei >= API_CONFIG.urls.length) return nextModel();
+            return doFetch().catch(function(err) {
+                var status = err && err.status;
+
+                if (status === 401 || status === 403) throw err;
+                if (status === 400 || status === 404) return nextModel();
+
+                if (status === 429) {
+                    if (retried429 >= 1) return nextModel();
+                    retried429++;
+                    return sleep(3000).then(attempt);
+                }
+
+                ei++;
+                return attempt();
+            });
+        }
+
+        return attempt();
     }
-    function httpFriendlyError(status) {
-        if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
-        if (status === 429) return '请求过于频繁（免费额度并发限制），请等几秒再试。';
-        return '服务器繁忙（错误码 ' + status + '），请稍后重试。';
+
+    function friendlyError(err) {
+        if (!err) return '网络异常，请稍后重试';
+        if (err.status === 402) return '账户余额不足，请前往硅基流动充值。';
+        if (err.status === 401 || err.status === 403) return 'API 密钥无效或已被禁用';
+        if (err.status === 429) return '请求太频繁，请等几秒再试';
+        if (err.status === 400 || err.status === 404) return '模型暂不可用，请稍后重试';
+        if (err.status) return '服务器繁忙（' + err.status + '），请稍后重试';
+        if (err.name === 'AbortError') return '请求超时，请检查网络后重试';
+        return '网络异常，请检查网络后重试';
     }
 
     /* ==========================================================
-       核心修复：请求队列 / 并发锁
-       确保同一时间只发出一个聊天请求、一个识图请求
+       2. DOM 引用
        ========================================================== */
-    var chatQueue = Promise.resolve();
-    var scanBusy = false;
-
     var bgm = document.getElementById('bgm');
     var soundBtn = document.getElementById('sound-toggle');
     var cinemaHero = document.getElementById('baike-hero');
     var shutterBtn = document.getElementById('shutterBtn');
+    var skipBtn = document.getElementById('skipBtn');
     var flashEffect = document.getElementById('flash-effect');
     var scrollCue = document.getElementById('scrollCue');
     var recStatus = document.getElementById('recStatus');
@@ -1917,6 +2140,8 @@
     var lines = cinemaHero.querySelectorAll('.cinema-text .line');
     var movies = cinemaHero.querySelectorAll('.bg-img[data-role="movie"]');
 
+    var storySection = document.getElementById('baike-story');
+    var storyScrollCue = document.getElementById('storyScrollCue');
     var storyFrame = document.getElementById('story-image-frame');
     var storyImage = document.getElementById('story-image');
     var storyNextBtn = document.getElementById('story-next-btn');
@@ -1934,7 +2159,6 @@
 
     var librarySection = document.getElementById('library-section');
     var libraryBg = document.getElementById('libraryBg');
-    var book = document.getElementById('book');
     var bookClip = document.getElementById('bookClip');
     var bookCover = document.getElementById('bookCover');
     var bookClose = document.getElementById('bookClose');
@@ -1964,11 +2188,11 @@
     var aiMessages = document.getElementById('ai-chat-messages');
     var aiAssistantContainer = document.getElementById('ai-assistant-container');
 
-    var canvas = document.getElementById('ripple-canvas');
-    var ctx = canvas.getContext('2d');
     var transition = document.getElementById('pageTransition');
 
-    /* 音乐 */
+    /* ==========================================================
+       3. 音乐
+       ========================================================== */
     var musicOn = localStorage.getItem('mangroveMusicOn') !== 'false';
     function updateSoundBtn() { soundBtn.innerText = bgm.paused ? '🔇' : '🔊'; }
     function tryPlayMusic() { if (musicOn && bgm.paused) bgm.play().catch(function(){}); }
@@ -1996,12 +2220,15 @@
     document.addEventListener('keydown', firstInteractionHandler, { passive: true });
     updateSoundBtn();
 
-    /* 页面过渡 */
+    /* ==========================================================
+       4. 页面过渡
+       ========================================================== */
     function navigateTo(url) {
         transition.classList.remove('enter');
         transition.classList.add('exit');
         setTimeout(function() { window.location.href = url; }, 600);
     }
+    window.navigateTo = navigateTo;
     var allLinks = document.querySelectorAll('a[href$=".html"], a[href*=".html?"]');
     for (var li = 0; li < allLinks.length; li++) {
         (function(a) {
@@ -2009,94 +2236,60 @@
         })(allLinks[li]);
     }
 
-    /* 光标 + 水波纹 */
-    var cursorDot = document.getElementById('cursor-dot');
-    var cursorRing = document.getElementById('cursor-ring');
-    var mouseX = 0, mouseY = 0, dotX = 0, dotY = 0, ringX = 0, ringY = 0;
-    var followX = 0, followY = 0, followTargetX = 0, followTargetY = 0;
-    var ripples = [], lastRippleTime = 0;
-
-    function resizeCanvas() {
-        var dpr = Math.min(window.devicePixelRatio || 1, 2);
-        canvas.width = Math.round(window.innerWidth * dpr);
-        canvas.height = Math.round(window.innerHeight * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    }
-
-    if (!isTouchDevice) {
-        resizeCanvas();
-        window.addEventListener('resize', resizeCanvas);
-        document.addEventListener('mousemove', function(e) { mouseX = e.clientX; mouseY = e.clientY; });
-        document.addEventListener('mouseover', function(e) {
-            if (e.target.closest && e.target.closest('button, a, .book, .book-hint, .scan-btn, .scan-upload-area, .book-category, .story-image-frame, .lightbox-close')) {
-                document.body.classList.add('hover-interactive');
-            } else { document.body.classList.remove('hover-interactive'); }
-        });
-        document.addEventListener('mousemove', function(e) {
-            if (document.body.classList.contains('lock-scroll') || lightbox.classList.contains('show')) return;
-            var now = Date.now(); if (now - lastRippleTime < 45) return; lastRippleTime = now;
-            ripples.push({ x: e.clientX, y: e.clientY, radius: 0, maxRadius: 70 + Math.random() * 50, alpha: 0.65, speed: 1.3 + Math.random() * 0.5, rings: 4 });
-        });
-        storyFrame.addEventListener('mousemove', function(e) {
-            if (lightbox.classList.contains('show')) return;
-            var rect = storyFrame.getBoundingClientRect();
-            followTargetX = ((e.clientX - (rect.left + rect.width / 2)) / rect.width) * 36;
-            followTargetY = ((e.clientY - (rect.top + rect.height / 2)) / rect.height) * 36;
-        });
-        storyFrame.addEventListener('mouseleave', function() { followTargetX = 0; followTargetY = 0; });
-
-        (function masterLoop() {
-            dotX += (mouseX - dotX) * 0.5; dotY += (mouseY - dotY) * 0.5;
-            ringX += (mouseX - ringX) * 0.15; ringY += (mouseY - ringY) * 0.15;
-            cursorDot.style.transform = 'translate3d(' + dotX + 'px,' + dotY + 'px,0) translate(-50%,-50%)';
-            cursorRing.style.transform = 'translate3d(' + ringX + 'px,' + ringY + 'px,0) translate(-50%,-50%)';
-            if (!lightbox.classList.contains('show')) {
-                followX += (followTargetX - followX) * 0.1; followY += (followTargetY - followY) * 0.1;
-                storyImage.style.transform = 'translate3d(' + followX + 'px,' + followY + 'px,0)';
-            }
-            ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
-            for (var i = ripples.length - 1; i >= 0; i--) {
-                var r = ripples[i]; r.radius += r.speed; r.alpha *= 0.972;
-                if (r.alpha < 0.01 || r.radius > r.maxRadius) { ripples.splice(i, 1); continue; }
-                for (var j = 0; j < r.rings; j++) {
-                    var rr = r.radius - j * 7; if (rr < 0) continue;
-                    ctx.beginPath(); ctx.arc(r.x, r.y, rr, 0, Math.PI * 2);
-                    ctx.strokeStyle = 'rgba(255, 210, 170, ' + (r.alpha * (1 - j * 0.22)) + ')';
-                    ctx.lineWidth = 1.4 - j * 0.25; ctx.stroke();
-                }
-            }
-            requestAnimationFrame(masterLoop);
-        })();
-    } else {
-        cursorDot.style.display = 'none'; cursorRing.style.display = 'none'; canvas.style.display = 'none';
-    }
-
-    /* 第一屏状态机 */
+    /* ==========================================================
+       5. 第一屏状态机
+       ========================================================== */
     var STATE = { IDLE: 'idle', RECORDING: 'recording', PAUSED: 'paused', DONE: 'done' };
-    var SCENE_DURATION = 2800, RESUME_DELAY = 800;
+    var SCENE_DURATION = 2200, RESUME_DELAY = 800;
     var cinemaState = STATE.IDLE, sceneIndex = -1, sceneTimer = null;
 
     function setCinemaState(newState) {
-        cinemaState = newState; cinemaHero.dataset.state = newState;
+        cinemaState = newState;
+        cinemaHero.dataset.state = newState;
         var labelMap = { idle: 'STANDBY', recording: 'REC', paused: 'PAUSE', done: 'DONE' };
         recStatus.textContent = labelMap[newState] || 'STANDBY';
-        if (newState === STATE.RECORDING || newState === STATE.PAUSED) document.body.classList.add('lock-scroll');
-        else document.body.classList.remove('lock-scroll');
+        
+        if (newState === STATE.RECORDING) {
+            document.body.classList.add('lock-scroll');
+            document.documentElement.classList.add('lock-scroll-html');
+            scrollCue.classList.remove('show');
+        } else if (newState === STATE.PAUSED) {
+            document.body.classList.add('lock-scroll');
+            document.documentElement.classList.add('lock-scroll-html');
+        } else {
+            document.body.classList.remove('lock-scroll');
+            document.documentElement.classList.remove('lock-scroll-html');
+        }
     }
     function clearSceneTimer() { if (sceneTimer) { clearTimeout(sceneTimer); sceneTimer = null; } }
+
     function startRecording() {
         if (cinemaState !== STATE.IDLE) return;
         musicOn = true; localStorage.setItem('mangroveMusicOn', 'true'); bgm.play().catch(function(){});
+        scrollCue.classList.remove('show');
         flashEffect.classList.add('fire');
         setTimeout(function() { flashEffect.classList.remove('fire'); }, 600);
-        setTimeout(function() { setCinemaState(STATE.RECORDING); sceneIndex = -1; endCredit.classList.remove('show'); playNextScene(); }, 300);
+        setTimeout(function() {
+            setCinemaState(STATE.RECORDING);
+            sceneIndex = -1;
+            endCredit.classList.remove('show');
+            playNextScene();
+        }, 300);
     }
     shutterBtn.addEventListener('click', function(e) { e.stopPropagation(); startRecording(); });
     cinemaHero.addEventListener('click', function(e) {
         if (cinemaState !== STATE.IDLE) return;
-        if (e.target.closest && e.target.closest('button, a, .bottom-right-group, .ai-assistant-container')) return;
+        if (e.target.closest && e.target.closest('button, a, .bottom-right-group, .ai-assistant-container, .scroll-cue')) return;
         startRecording();
     });
+
+    // 跳过按钮逻辑
+    skipBtn.addEventListener('click', function(e) {
+        e.stopPropagation();
+        clearSceneTimer();
+        finishCinema();
+    });
+
     function playNextScene() {
         if (cinemaState === STATE.PAUSED || cinemaState === STATE.DONE) return;
         var nextIndex = sceneIndex + 1;
@@ -2105,48 +2298,77 @@
             movies[sceneIndex].classList.remove('active');
             if (sceneIndex < lines.length) lines[sceneIndex].classList.remove('active');
         }
-        sceneIndex = nextIndex; movies[sceneIndex].classList.add('active');
+        sceneIndex = nextIndex;
+        movies[sceneIndex].classList.add('active');
         if (sceneIndex < lines.length) lines[sceneIndex].classList.add('active');
         sceneTimer = setTimeout(playNextScene, SCENE_DURATION);
     }
-    function finishCinema() { clearSceneTimer(); setCinemaState(STATE.DONE); scrollCue.classList.add('show'); endCredit.classList.add('show'); }
+    
+    function finishCinema() {
+        clearSceneTimer();
+        setCinemaState(STATE.DONE);
+        scrollCue.classList.add('show');
+        endCredit.classList.add('show');
+        // 补全所有字幕
+        for (var i = 0; i < lines.length; i++) lines[i].classList.add('active');
+    }
+    
     function pauseCinema() { clearSceneTimer(); setCinemaState(STATE.PAUSED); }
-    function resumeCinema() { setCinemaState(STATE.RECORDING); clearSceneTimer(); sceneTimer = setTimeout(playNextScene, RESUME_DELAY); }
+    function resumeCinema() {
+        setCinemaState(STATE.RECORDING);
+        clearSceneTimer();
+        sceneTimer = setTimeout(playNextScene, RESUME_DELAY);
+    }
     function replayCinema() {
         clearSceneTimer();
         for (var i = 0; i < movies.length; i++) movies[i].classList.remove('active');
         for (var k = 0; k < lines.length; k++) lines[k].classList.remove('active');
-        endCredit.classList.remove('show'); scrollCue.classList.remove('show'); sceneIndex = -1;
-        window.scrollTo({ top: 0, behavior: 'smooth' }); setCinemaState(STATE.IDLE);
+        endCredit.classList.remove('show');
+        scrollCue.classList.remove('show');
+        sceneIndex = -1;
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setCinemaState(STATE.IDLE);
+        setTimeout(function() { if (cinemaState === STATE.IDLE) scrollCue.classList.add('show'); }, 1200);
     }
     replayBtn.addEventListener('click', replayCinema);
 
+    setTimeout(function() {
+        if (cinemaState === STATE.IDLE) scrollCue.classList.add('show');
+    }, 1600);
+
     var wheelAccum = 0;
     window.addEventListener('wheel', function(e) {
-        if (cinemaState === STATE.IDLE || cinemaState === STATE.DONE) return;
         if (cinemaState === STATE.RECORDING) {
-            if (e.deltaY > 0) { wheelAccum += e.deltaY; if (wheelAccum > 100) { pauseCinema(); wheelAccum = 0; } }
-            else wheelAccum = 0; return;
+            e.preventDefault();
+            return;
         }
+        if (cinemaState === STATE.IDLE || cinemaState === STATE.DONE) return;
+        
         if (cinemaState === STATE.PAUSED) {
             if (e.deltaY > 0) { wheelAccum += e.deltaY; if (wheelAccum > 250) { finishCinema(); wheelAccum = 0; } }
             else { wheelAccum = 0; resumeCinema(); }
         }
-    }, { passive: true });
+    }, { passive: false });
+
     var filmTouchStartY = 0;
-    window.addEventListener('touchstart', function(e) { if (e.touches.length === 1) filmTouchStartY = e.touches[0].clientY; }, { passive: true });
+    window.addEventListener('touchstart', function(e) {
+        if (e.touches.length === 1) filmTouchStartY = e.touches[0].clientY;
+    }, { passive: true });
     window.addEventListener('touchmove', function(e) {
-        if (cinemaState !== STATE.RECORDING && cinemaState !== STATE.PAUSED) return;
+        if (cinemaState === STATE.RECORDING) {
+            if (e.cancelable) e.preventDefault();
+            return;
+        }
+        if (cinemaState !== STATE.PAUSED) return;
         if (e.touches.length !== 1) return;
         var deltaY = filmTouchStartY - e.touches[0].clientY;
-        if (cinemaState === STATE.RECORDING && deltaY > 80) { pauseCinema(); filmTouchStartY = e.touches[0].clientY; }
-        else if (cinemaState === STATE.PAUSED) {
-            if (deltaY > 200) finishCinema();
-            else if (deltaY < -80) { resumeCinema(); filmTouchStartY = e.touches[0].clientY; }
-        }
-    }, { passive: true });
+        if (deltaY > 200) finishCinema();
+        else if (deltaY < -80) { resumeCinema(); filmTouchStartY = e.touches[0].clientY; }
+    }, { passive: false });
+
     document.addEventListener('keydown', function(e) {
-        var tag = e.target.tagName; if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+        var tag = e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
         if ((e.key === ' ' || e.key === 'Enter') && cinemaState === STATE.IDLE) { e.preventDefault(); startRecording(); }
         if (e.key === 'r' || e.key === 'R') replayCinema();
         if (e.key === 'Escape') {
@@ -2156,29 +2378,78 @@
     });
     setCinemaState(STATE.IDLE);
 
-    /* Lightbox */
-    var lbScale = 1, lbX = 0, lbY = 0, lbDragging = false, lbStartX = 0, lbStartY = 0, lbBaseX = 0, lbBaseY = 0, lbTouchDist = 0, lbTouchBaseScale = 1;
-    function updateLbTransform() { lightboxImg.style.transform = 'translate3d(' + lbX + 'px,' + lbY + 'px,0) scale(' + lbScale + ')'; }
-    function openLightbox(src) { lightboxImg.src = src; lbScale = 1; lbX = 0; lbY = 0; updateLbTransform(); lightbox.classList.add('show'); }
-    function closeLightbox() { lightbox.classList.remove('show'); setTimeout(function() { lbScale = 1; lbX = 0; lbY = 0; updateLbTransform(); }, 300); }
+    /* ==========================================================
+       6. Lightbox
+       ========================================================== */
+    var lbScale = 1, lbX = 0, lbY = 0, lbDragging = false;
+    var lbStartX = 0, lbStartY = 0, lbBaseX = 0, lbBaseY = 0, lbTouchDist = 0, lbTouchBaseScale = 1;
+
+    function updateLbTransform() {
+        lightboxImg.style.transform = 'translate3d(' + lbX + 'px,' + lbY + 'px,0) scale(' + lbScale + ')';
+    }
+    function openLightbox(src) {
+        lightboxImg.src = src; lbScale = 1; lbX = 0; lbY = 0;
+        updateLbTransform(); lightbox.classList.add('show');
+    }
+    function closeLightbox() {
+        lightbox.classList.remove('show');
+        setTimeout(function() { lbScale = 1; lbX = 0; lbY = 0; updateLbTransform(); }, 300);
+    }
     storyFrame.addEventListener('click', function() { openLightbox(storyImage.src); });
     lightboxBackdrop.addEventListener('click', closeLightbox);
     lightboxClose.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('wheel', function(e) { e.preventDefault(); lbScale = Math.max(0.5, Math.min(6, lbScale + (e.deltaY > 0 ? -0.15 : 0.15))); updateLbTransform(); }, { passive: false });
-    lightboxImg.addEventListener('mousedown', function(e) { e.preventDefault(); lbDragging = true; lbStartX = e.clientX; lbStartY = e.clientY; lbBaseX = lbX; lbBaseY = lbY; lightboxImg.classList.add('grabbing'); });
-    document.addEventListener('mousemove', function(e) { if (!lbDragging) return; lbX = lbBaseX + (e.clientX - lbStartX); lbY = lbBaseY + (e.clientY - lbStartY); updateLbTransform(); });
-    document.addEventListener('mouseup', function() { if (lbDragging) { lbDragging = false; lightboxImg.classList.remove('grabbing'); } });
+    lightbox.addEventListener('wheel', function(e) {
+        e.preventDefault();
+        lbScale = Math.max(0.5, Math.min(6, lbScale + (e.deltaY > 0 ? -0.15 : 0.15)));
+        updateLbTransform();
+    }, { passive: false });
+    lightboxImg.addEventListener('mousedown', function(e) {
+        e.preventDefault(); lbDragging = true;
+        lbStartX = e.clientX; lbStartY = e.clientY; lbBaseX = lbX; lbBaseY = lbY;
+        lightboxImg.classList.add('grabbing');
+    });
+    document.addEventListener('mousemove', function(e) {
+        if (!lbDragging) return;
+        lbX = lbBaseX + (e.clientX - lbStartX);
+        lbY = lbBaseY + (e.clientY - lbStartY);
+        updateLbTransform();
+    });
+    document.addEventListener('mouseup', function() {
+        if (lbDragging) { lbDragging = false; lightboxImg.classList.remove('grabbing'); }
+    });
     lightboxImg.addEventListener('touchstart', function(e) {
-        if (e.touches.length === 1) { lbStartX = e.touches[0].clientX; lbStartY = e.touches[0].clientY; lbBaseX = lbX; lbBaseY = lbY; lbDragging = true; }
-        else if (e.touches.length === 2) { var dx = e.touches[0].clientX - e.touches[1].clientX; var dy = e.touches[0].clientY - e.touches[1].clientY; lbTouchDist = Math.sqrt(dx * dx + dy * dy); lbTouchBaseScale = lbScale; }
+        if (e.touches.length === 1) {
+            lbStartX = e.touches[0].clientX; lbStartY = e.touches[0].clientY;
+            lbBaseX = lbX; lbBaseY = lbY; lbDragging = true;
+        } else if (e.touches.length === 2) {
+            var dx = e.touches[0].clientX - e.touches[1].clientX;
+            var dy = e.touches[0].clientY - e.touches[1].clientY;
+            lbTouchDist = Math.sqrt(dx * dx + dy * dy);
+            lbTouchBaseScale = lbScale;
+        }
     }, { passive: true });
     lightboxImg.addEventListener('touchmove', function(e) {
-        if (e.touches.length === 1 && lbDragging) { if (e.cancelable) e.preventDefault(); lbX = lbBaseX + (e.touches[0].clientX - lbStartX); lbY = lbBaseY + (e.touches[0].clientY - lbStartY); updateLbTransform(); }
-        else if (e.touches.length === 2) { if (e.cancelable) e.preventDefault(); var dx = e.touches[0].clientX - e.touches[1].clientX; var dy = e.touches[0].clientY - e.touches[1].clientY; var dist = Math.sqrt(dx * dx + dy * dy); if (lbTouchDist > 0) { lbScale = Math.max(0.5, Math.min(6, lbTouchBaseScale * (dist / lbTouchDist))); updateLbTransform(); } }
+        if (e.touches.length === 1 && lbDragging) {
+            if (e.cancelable) e.preventDefault();
+            lbX = lbBaseX + (e.touches[0].clientX - lbStartX);
+            lbY = lbBaseY + (e.touches[0].clientY - lbStartY);
+            updateLbTransform();
+        } else if (e.touches.length === 2) {
+            if (e.cancelable) e.preventDefault();
+            var dx = e.touches[0].clientX - e.touches[1].clientX;
+            var dy = e.touches[0].clientY - e.touches[1].clientY;
+            var dist = Math.sqrt(dx * dx + dy * dy);
+            if (lbTouchDist > 0) {
+                lbScale = Math.max(0.5, Math.min(6, lbTouchBaseScale * (dist / lbTouchDist)));
+                updateLbTransform();
+            }
+        }
     }, { passive: false });
     lightboxImg.addEventListener('touchend', function() { lbDragging = false; });
 
-    /* 相册 */
+    /* ==========================================================
+       7. 相册
+       ========================================================== */
     var albumData = [
         { image: 'bg6.jpg', tag: '红 树 林 的 根', title: '为什么它要<br><span class="highlight">长出这么奇怪的根</span>？', paragraphs: ['红树林生活在潮间带，每天都被咸水反复淹没。普通的树根无法在缺氧、高盐的淤泥里呼吸。', '所以红树林进化出了<span class="green">支柱根</span>和<span class="green">呼吸根</span>——它们从树干伸出，像拱门一样撑在泥上，把一部分根露出水面，直接呼吸空气。', '这些根不仅能让红树林活下来，还能<span class="green">削弱海浪、固定泥沙</span>。一道成熟的根系，就是一道天然的防波堤。'] },
         { image: 'bg7.jpg', tag: '红 树 林 之 谜', title: '为什么叫<span class="highlight">红树林</span><br>它却<span class="highlight">不是红色</span>？', paragraphs: ['这是一个被问了无数次的问题。红树林的叶子常年翠绿，树冠郁郁葱葱，从外表上看，它和任何一座普通树林都没有区别。', '秘密藏在<span class="green">树皮里</span>。红树植物的树皮富含一种叫<span class="green">单宁酸</span>的物质。当树皮被海水浸泡、或被划破，单宁酸接触空气后就会<span class="green">氧化成红褐色</span>。', '早期的渔民和伐木者，看到砍开的树干里流出红褐色的汁液，便把它叫做"红树"。名字就这样传了下来——<span class="green">不是因为树叶红，而是因为树的心，是红的。</span>'] },
@@ -2187,44 +2458,88 @@
     var currentAlbumIndex = 0, isSwitching = false;
     function switchAlbum(index) {
         if (index === currentAlbumIndex || isSwitching) return;
-        isSwitching = true; storyImage.classList.add('leaving');
+        isSwitching = true;
+        storyImage.classList.add('leaving');
         setTimeout(function() {
             var data = albumData[index];
-            storyImage.src = data.image; storyTag.textContent = data.tag; storyTitle.innerHTML = data.title;
-            var pHTML = ''; for (var i = 0; i < data.paragraphs.length; i++) pHTML += '<p>' + data.paragraphs[i] + '</p>';
-            storyParagraphs.innerHTML = pHTML; pageCurrent.textContent = (index + 1);
-            for (var j = 0; j < pageDots.length; j++) { if (j === index) pageDots[j].classList.add('active'); else pageDots[j].classList.remove('active'); }
+            storyImage.src = data.image;
+            storyTag.textContent = data.tag;
+            storyTitle.innerHTML = data.title;
+            var pHTML = '';
+            for (var i = 0; i < data.paragraphs.length; i++) pHTML += '<p>' + data.paragraphs[i] + '</p>';
+            storyParagraphs.innerHTML = pHTML;
+            pageCurrent.textContent = (index + 1);
+            for (var j = 0; j < pageDots.length; j++) {
+                if (j === index) pageDots[j].classList.add('active');
+                else pageDots[j].classList.remove('active');
+            }
             currentAlbumIndex = index;
-            var onLoad = function() { storyImage.classList.remove('leaving'); storyImage.removeEventListener('load', onLoad); setTimeout(function() { isSwitching = false; }, 400); };
-            if (storyImage.complete && storyImage.naturalWidth > 0) onLoad(); else storyImage.addEventListener('load', onLoad);
+            var onLoad = function() {
+                storyImage.classList.remove('leaving');
+                storyImage.removeEventListener('load', onLoad);
+                setTimeout(function() { isSwitching = false; }, 400);
+            };
+            if (storyImage.complete && storyImage.naturalWidth > 0) onLoad();
+            else storyImage.addEventListener('load', onLoad);
         }, 400);
     }
     storyNextBtn.addEventListener('click', function(e) { e.stopPropagation(); switchAlbum((currentAlbumIndex + 1) % albumData.length); });
     storyPrevBtn.addEventListener('click', function(e) { e.stopPropagation(); switchAlbum((currentAlbumIndex - 1 + albumData.length) % albumData.length); });
 
-    /* 第三屏 · 进出动画 */
+    /* ==========================================================
+       8. 第二屏下滑提示
+       ========================================================== */
+    function updateStoryCue() {
+        if (!storyScrollCue) return;
+        var r = storySection.getBoundingClientRect();
+        var vh = window.innerHeight;
+        var visible = (r.top < vh * 0.35 && r.bottom > vh * 0.55);
+        if (visible) storyScrollCue.classList.add('show');
+        else storyScrollCue.classList.remove('show');
+    }
+
+    /* ==========================================================
+       9. 第三屏进出动画
+       ========================================================== */
     function updateLibraryState() {
         var rect = librarySection.getBoundingClientRect(), vh = window.innerHeight;
         var progress = Math.max(0, Math.min(1, (vh - rect.top) / vh));
         libraryBg.style.transform = 'translateY(' + ((1 - progress) * -100) + '%)';
         libraryBg.style.opacity = Math.min(progress * 1.3, 1);
-        if (progress >= 0.96) { librarySection.classList.add('bg-dark', 'bg-in', 'is-ready'); }
-        else { librarySection.classList.remove('is-ready'); if (progress < 0.85) librarySection.classList.remove('bg-dark', 'bg-in'); }
+        if (progress >= 0.96) librarySection.classList.add('bg-dark', 'bg-in', 'is-ready');
+        else {
+            librarySection.classList.remove('is-ready');
+            if (progress < 0.85) librarySection.classList.remove('bg-dark', 'bg-in');
+        }
     }
-    window.addEventListener('scroll', updateLibraryState, { passive: true });
-    window.addEventListener('resize', updateLibraryState);
+    window.addEventListener('scroll', function() {
+        updateLibraryState();
+        updateStoryCue();
+    }, { passive: true });
+    window.addEventListener('resize', function() {
+        updateLibraryState();
+        updateStoryCue();
+    });
     updateLibraryState();
+    updateStoryCue();
 
-    /* 书 */
+    /* ==========================================================
+       10. 书本
+       ========================================================== */
     var bookBusy = false, FLIP_DURATION = 1200;
     function openBook() {
         if (bookBusy || bookClip.classList.contains('open')) return;
-        bookBusy = true; bookClip.classList.add('flipping', 'open'); bookHint.classList.add('hide');
+        bookBusy = true;
+        bookClip.classList.add('flipping', 'open');
+        bookHint.classList.add('hide');
         setTimeout(function() { bookClip.classList.remove('flipping'); bookBusy = false; }, FLIP_DURATION);
     }
     function closeBook() {
         if (bookBusy || !bookClip.classList.contains('open')) return;
-        bookBusy = true; bookClip.classList.add('flipping'); bookClip.classList.remove('open'); bookHint.classList.remove('hide');
+        bookBusy = true;
+        bookClip.classList.add('flipping');
+        bookClip.classList.remove('open');
+        bookHint.classList.remove('hide');
         setTimeout(function() { bookClip.classList.remove('flipping'); bookBusy = false; }, FLIP_DURATION);
     }
     bookCover.addEventListener('click', function(e) { e.stopPropagation(); openBook(); });
@@ -2235,24 +2550,36 @@
     function switchPreview(cat) {
         for (var i = 0; i < bookCategories.length; i++) bookCategories[i].classList.remove('active');
         cat.classList.add('active');
-        var key = cat.dataset.img; if (currentPreviewKey === key) return;
+        var key = cat.dataset.img;
+        if (currentPreviewKey === key) return;
         currentPreviewKey = key;
-        bookPreviewImg.classList.add('switching'); bookPreviewCaption.classList.add('switching');
+        bookPreviewImg.classList.add('switching');
+        bookPreviewCaption.classList.add('switching');
         setTimeout(function() {
-            bookPreviewImg.src = cat.dataset.img; cpName.textContent = cat.dataset.name; cpEn.textContent = cat.dataset.en; cpDesc.textContent = cat.dataset.desc;
-            bookPreviewImg.classList.remove('switching'); bookPreviewCaption.classList.remove('switching');
+            bookPreviewImg.src = cat.dataset.img;
+            cpName.textContent = cat.dataset.name;
+            cpEn.textContent = cat.dataset.en;
+            cpDesc.textContent = cat.dataset.desc;
+            bookPreviewImg.classList.remove('switching');
+            bookPreviewCaption.classList.remove('switching');
         }, 200);
     }
     for (var bi = 0; bi < bookCategories.length; bi++) {
         (function(cat) {
             cat.addEventListener('mouseenter', function() { switchPreview(cat); });
-            cat.addEventListener('click', function(e) { if (isTouchDevice) { e.preventDefault(); switchPreview(cat); } });
+            cat.addEventListener('click', function(e) {
+                if ('ontouchstart' in window) { e.preventDefault(); switchPreview(cat); }
+            });
             cat.addEventListener('touchstart', function() { switchPreview(cat); }, { passive: true });
         })(bookCategories[bi]);
     }
-    ['plant.jpg', 'bird.jpg', 'fish.jpg', 'bug.jpg'].forEach(function(src) { var img = new Image(); img.src = src; });
+    ['plant.jpg', 'bird.jpg', 'fish.jpg', 'bug.jpg'].forEach(function(src) {
+        var img = new Image(); img.src = src;
+    });
 
-    /* 识图逻辑 */
+    /* ==========================================================
+       11. AI 识图
+       ========================================================== */
     var SCAN_SVG_DOWN = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
     var SCAN_SVG_UP = '<svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:currentColor;stroke-width:1.8;fill:none;stroke-linecap:round;stroke-linejoin:round;"><path d="M18 15l-6-6-6 6"/></svg>';
 
@@ -2277,201 +2604,247 @@
         '【温馨提示】一句很短的话，提醒用户该结果非百分百准确，谨慎参考。'
     ].join('\n');
 
+    var scanBusy = false;
+
     scanBtn.addEventListener('click', function(e) {
         e.preventDefault(); e.stopPropagation();
         var isOpen = scanUpload.classList.contains('show');
-        if (isOpen) { scanUpload.classList.remove('show'); scanBtn.innerHTML = '开始识别 ' + SCAN_SVG_DOWN; }
-        else { scanUpload.classList.add('show'); scanBtn.innerHTML = '收起 ' + SCAN_SVG_UP; }
+        if (isOpen) {
+            scanUpload.classList.remove('show');
+            scanBtn.innerHTML = '开始识别 ' + SCAN_SVG_DOWN;
+        } else {
+            scanUpload.classList.add('show');
+            scanBtn.innerHTML = '收起 ' + SCAN_SVG_UP;
+        }
     });
-    scanUploadArea.addEventListener('click', function(e) { e.stopPropagation(); scanFileInput.click(); });
-    scanFileInput.addEventListener('change', function(e) { var file = e.target.files[0]; if (file) handleScanFile(file); e.target.value = ''; });
-    scanUploadArea.addEventListener('dragover', function(e) { e.preventDefault(); scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.8)'; scanUploadArea.style.background = 'rgba(126, 232, 181, 0.12)'; });
-    scanUploadArea.addEventListener('dragleave', function() { scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.4)'; scanUploadArea.style.background = 'rgba(126, 232, 181, 0.03)'; });
-    scanUploadArea.addEventListener('drop', function(e) { e.preventDefault(); scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.4)'; scanUploadArea.style.background = 'rgba(126, 232, 181, 0.03)'; var file = e.dataTransfer.files[0]; if (file) handleScanFile(file); });
 
-    var scanAbortController = null, scanTimeout = null, scanCancelled = false;
+    scanUploadArea.addEventListener('click', function(e) { e.stopPropagation(); scanFileInput.click(); });
+    scanFileInput.addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (file) handleScanFile(file);
+        e.target.value = '';
+    });
+    scanUploadArea.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.8)';
+        scanUploadArea.style.background = 'rgba(126, 232, 181, 0.12)';
+    });
+    scanUploadArea.addEventListener('dragleave', function() {
+        scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.4)';
+        scanUploadArea.style.background = 'rgba(126, 232, 181, 0.03)';
+    });
+    scanUploadArea.addEventListener('drop', function(e) {
+        e.preventDefault();
+        scanUploadArea.style.borderColor = 'rgba(126, 232, 181, 0.4)';
+        scanUploadArea.style.background = 'rgba(126, 232, 181, 0.03)';
+        var file = e.dataTransfer.files[0];
+        if (file) handleScanFile(file);
+    });
+
+    function resetScanUI() {
+        scanBusy = false;
+        scanLoading.classList.remove('show');
+        scanLoading.querySelector('.scan-loading-text').textContent = 'AI 正在识别…';
+    }
     function cancelScan() {
-        scanCancelled = true; scanBusy = false;
-        if (scanAbortController) { try { scanAbortController.abort(); } catch (e) {} scanAbortController = null; }
-        if (scanTimeout) { clearTimeout(scanTimeout); scanTimeout = null; }
-        scanLoading.classList.remove('show'); scanResult.classList.remove('show'); scanUpload.classList.add('show');
+        resetScanUI();
+        scanResult.classList.remove('show');
+        scanUpload.classList.add('show');
     }
     window.cancelScan = cancelScan;
 
     function handleScanFile(file) {
         if (!/^image\//.test(file.type)) { alert('请上传图片文件（JPG / PNG）。'); return; }
         if (file.size > 5 * 1024 * 1024) { alert('图片太大了，请选择小于 5MB 的图片。'); return; }
-        if (scanBusy) { alert('上一次识别还没完成，请稍等或点击“重新上传”取消。'); return; }
-        scanCancelled = false;
-        scanUpload.classList.remove('show'); scanLoading.classList.add('show'); scanResult.classList.remove('show');
+        if (scanBusy) { alert('上一次识别还没完成，请稍等。'); return; }
+        
+        // 检查本地识图限额（每天5次）
+        if (!checkQuota('scan')) {
+            showScanResult('今日识图次数已用尽（防刷限制）。', true);
+            return;
+        }
+
+        scanBusy = true;
+        scanUpload.classList.remove('show');
+        scanLoading.classList.add('show');
+        scanResult.classList.remove('show');
+        scanLoading.querySelector('.scan-loading-text').textContent = 'AI 正在识别…';
+
         var reader = new FileReader();
         reader.onload = function(event) {
             compressImage(event.target.result, 768, 0.75).then(function(compressed) {
-                return callScanAPI(compressed, 0);
+                return callAPI({
+                    models: API_CONFIG.scanModels,
+                    messages: [{
+                        role: 'user',
+                        content: [
+                            { type: 'image_url', image_url: { url: compressed } },
+                            { type: 'text', text: SCAN_SYSTEM_PROMPT }
+                        ]
+                    }],
+                    temperature: 0.1,
+                    max_tokens: API_CONFIG.maxTokensScan,
+                    timeout: API_CONFIG.scanTimeout
+                });
+            }).then(function(data) {
+                resetScanUI();
+                addQuota('scan'); // 成功则计次
+                var txt = '';
+                if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                    var m = data.choices[0].message;
+                    txt = String(m.content || '').trim() || String(m.reasoning_content || '').trim();
+                }
+                if (txt) renderScanResult(txt);
+                else showScanResult('AI 返回了空结果，换张照片通常就能恢复。', true);
             }).catch(function(err) {
-                scanBusy = false; scanLoading.classList.remove('show');
-                if (err === 'IMAGE_DECODE_FAILED') showScanResult('这张图片无法解码，请换一张试试。', true);
-                else showScanResult('图片处理失败，请换一张试试。', true);
+                resetScanUI();
+                showScanResult(friendlyError(err) + '（识图）', true);
+                if (window.console && err) console.warn('[scan]', err.status, err.message, err.body);
             });
         };
-        reader.onerror = function() { scanBusy = false; scanLoading.classList.remove('show'); showScanResult('图片读取失败，请重新选择。', true); };
+        reader.onerror = function() {
+            resetScanUI();
+            showScanResult('图片读取失败，请重新选择。', true);
+        };
         reader.readAsDataURL(file);
     }
 
     function compressImage(base64Str, maxWidth, quality) {
         return new Promise(function(resolve, reject) {
-            var img = new Image(); img.src = base64Str;
+            var img = new Image();
+            img.src = base64Str;
             img.onload = function() {
                 try {
-                    var c = document.createElement('canvas'); var w = img.width, h = img.height;
+                    var c = document.createElement('canvas');
+                    var w = img.width, h = img.height;
                     if (w > maxWidth) { h = Math.round((h * maxWidth) / w); w = maxWidth; }
                     c.width = w; c.height = h;
-                    var cx = c.getContext('2d'); cx.drawImage(img, 0, 0, w, h);
-                    var out = c.toDataURL('image/jpeg', quality); var q = quality;
-                    while (out.length > 350000 && q > 0.4) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+                    var cx = c.getContext('2d');
+                    cx.drawImage(img, 0, 0, w, h);
+                    var out = c.toDataURL('image/jpeg', quality);
+                    var q = quality;
+                    while (out.length > 350000 && q > 0.4) {
+                        q -= 0.1;
+                        out = c.toDataURL('image/jpeg', q);
+                    }
                     resolve(out);
                 } catch (err) { reject(err); }
             };
-            img.onerror = function() { reject('IMAGE_DECODE_FAILED'); };
+            img.onerror = function() { reject(new Error('IMAGE_DECODE_FAILED')); };
         });
     }
 
-    /* ==========================================================
-       识图 API —— 加锁 + 429 长退避
-       ========================================================== */
-    function callScanAPI(base64Data, attempt) {
-        attempt = attempt || 0;
-        scanBusy = true;
-        scanAbortController = new AbortController();
-        if (scanTimeout) clearTimeout(scanTimeout);
-        scanTimeout = setTimeout(function() { if (scanAbortController) { try { scanAbortController.abort(); } catch (e) {} } }, API_CONFIG.timeout);
-
-        return fetch(API_CONFIG.url, {
-            method: 'POST',
-            headers: buildHeaders(),
-            body: JSON.stringify({
-                model: API_CONFIG.scanModel,
-                temperature: 0.1,
-                max_tokens: 1500,
-                messages: [{ role: "user", content: [{ type: "image_url", image_url: { url: base64Data } }, { type: "text", text: SCAN_SYSTEM_PROMPT }] }]
-            }),
-            signal: scanAbortController.signal
-        }).then(function(response) {
-            if (scanTimeout) { clearTimeout(scanTimeout); scanTimeout = null; }
-            scanAbortController = null;
-            return readApiResponse(response);
-        }).then(function(data) {
-            scanBusy = false; scanLoading.classList.remove('show');
-            if (data.choices && data.choices[0] && data.choices[0].message) {
-                var _m = data.choices[0].message || {};
-                var _txt = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim();
-                if (_txt) renderScanResult(_txt);
-                else showScanResult('AI 返回了空结果，换张照片通常就能恢复。', true);
-            } else {
-                var msg = (data.error && data.error.message) ? String(data.error.message) : '识别失败，请重试。';
-                showScanResult(msg, true);
-            }
-        }).catch(function(err) {
-            if (scanTimeout) { clearTimeout(scanTimeout); scanTimeout = null; }
-            scanAbortController = null;
-            if (scanCancelled) { scanBusy = false; return; }
-
-            var isTimeout = err && (err.name === 'AbortError' || err.name === 'TimeoutError');
-            var isNetwork = err && err.name === 'TypeError';
-            var is429 = err && err.isHttp && err.status === 429;
-            var isHttp5xx = err && err.isHttp && [500, 502, 503, 504].indexOf(err.status) > -1;
-
-            // 429：等待更长时间（5秒 / 10秒），免费视觉模型只有 1 并发，必须等前一个彻底结束
-            if (is429 && attempt < 1) {
-                var txtEl = scanLoading.querySelector('.scan-loading-text');
-                if (txtEl) txtEl.textContent = '识图请求排队中，等待 5 秒…';
-                return new Promise(function(res) { setTimeout(res, 5000); }).then(function() { return callScanAPI(base64Data, attempt + 1); });
-            }
-
-            if ((isTimeout || isNetwork || isHttp5xx) && attempt < API_CONFIG.maxRetry) {
-                var delay = 2000 * Math.pow(2, attempt);
-                var txtEl2 = scanLoading.querySelector('.scan-loading-text');
-                if (txtEl2) txtEl2.textContent = 'AI 正在识别…（重试 ' + (attempt + 1) + '/' + API_CONFIG.maxRetry + '）';
-                return new Promise(function(res) { setTimeout(res, delay); }).then(function() { return callScanAPI(base64Data, attempt + 1); });
-            }
-
-            scanBusy = false; scanLoading.classList.remove('show');
-            if (is429) showScanResult('识图请求太频繁（免费模型并发限制），请等几秒后再试。', true);
-            else if (isTimeout) showScanResult('识别超时了，请换一张更小的图片或稍后重试。', true);
-            else if (err && err.isHttp) showScanResult(httpFriendlyError(err.status), true);
-            else showScanResult('识别失败（网络异常），请稍后重试。', true);
-        });
+    function scanEl(tag, cls, text) {
+        var d = document.createElement(tag);
+        if (cls) d.className = cls;
+        if (text != null && text !== '') d.textContent = text;
+        return d;
     }
-
-    function scanEl(tag, cls, text) { var d = document.createElement(tag); if (cls) d.className = cls; if (text != null && text !== '') d.textContent = text; return d; }
 
     function renderScanResult(text) {
-        var getField = function(label) { var regex = new RegExp('【\\s*' + label + '\\s*】([\\s\\S]*?)(?=【|$)', 'i'); var match = text.match(regex); return match ? match[1].trim() : ''; };
-        var name = getField('名称'), latin = getField('学名'), conf = getField('置信度'), basis = getField('判断依据'), feature = getField('特征'), habit = getField('习性'), fact = getField('冷知识'), tip = getField('温馨提示');
+        var getField = function(label) {
+            var regex = new RegExp('【\\s*' + label + '\\s*】([\\s\\S]*?)(?=【|$)', 'i');
+            var match = text.match(regex);
+            return match ? match[1].trim() : '';
+        };
+        var name = getField('名称'),
+            latin = getField('学名'),
+            conf = getField('置信度'),
+            basis = getField('判断依据'),
+            feature = getField('特征'),
+            habit = getField('习性'),
+            fact = getField('冷知识'),
+            tip = getField('温馨提示');
 
         scanResult.textContent = '';
         if (name) {
-            var head = document.createElement('div'); head.className = 'scan-result-head';
+            var head = document.createElement('div');
+            head.className = 'scan-result-head';
             head.appendChild(scanEl('div', 'scan-result-name', name));
-            if (conf) { var lvl = conf.indexOf('高') > -1 ? 'h' : (conf.indexOf('中') > -1 ? 'm' : 'l'); head.appendChild(scanEl('span', 'scan-result-conf conf-' + lvl, '置信度 ' + conf)); }
+            if (conf) {
+                var lvl = conf.indexOf('高') > -1 ? 'h' : (conf.indexOf('中') > -1 ? 'm' : 'l');
+                head.appendChild(scanEl('span', 'scan-result-conf conf-' + lvl, '置信度 ' + conf));
+            }
             scanResult.appendChild(head);
             if (latin) scanResult.appendChild(scanEl('div', 'scan-result-latin', latin));
-            var addItem = function(labelText, contentText) { var box = scanEl('div', 'scan-result-item'); box.appendChild(scanEl('div', 'scan-result-label', '◆ ' + labelText)); box.appendChild(scanEl('div', 'scan-result-content', contentText)); scanResult.appendChild(box); };
-            if (basis) addItem('判断依据', basis); if (feature) addItem('特征', feature); if (habit) addItem('习性', habit); if (fact) addItem('冷知识', fact);
+
+            var addItem = function(labelText, contentText) {
+                var box = scanEl('div', 'scan-result-item');
+                box.appendChild(scanEl('div', 'scan-result-label', '◆ ' + labelText));
+                box.appendChild(scanEl('div', 'scan-result-content', contentText));
+                scanResult.appendChild(box);
+            };
+            if (basis) addItem('判断依据', basis);
+            if (feature) addItem('特征', feature);
+            if (habit) addItem('习性', habit);
+            if (fact) addItem('冷知识', fact);
             if (tip) scanResult.appendChild(scanEl('div', 'scan-result-tip', '☝ ' + tip));
-        } else { scanResult.appendChild(scanEl('div', 'scan-result-raw', text)); }
-        scanResult.appendChild(scanEl('div', 'scan-disclaimer', '以上内容由 AI 自动生成，均属于"疑似"识别结果，存在误判可能，仅供科普参考，不构成专业鉴定结论。'));
-        var againBtn = scanEl('button', 'scan-cancel', '重新上传'); againBtn.type = 'button'; againBtn.addEventListener('click', cancelScan); scanResult.appendChild(againBtn);
+        } else {
+            scanResult.appendChild(scanEl('div', 'scan-result-raw', text));
+        }
+        scanResult.appendChild(scanEl('div', 'scan-disclaimer',
+            '以上内容由 AI 自动生成，均属于"疑似"识别结果，存在误判可能，仅供科普参考，不构成专业鉴定结论。'));
+
+        var againBtn = scanEl('button', 'scan-cancel', '重新上传');
+        againBtn.type = 'button';
+        againBtn.addEventListener('click', cancelScan);
+        scanResult.appendChild(againBtn);
         scanResult.classList.add('show');
     }
 
     function showScanResult(text, isError) {
         scanResult.textContent = '';
-        var raw = scanEl('div', 'scan-result-raw', text); if (isError) raw.style.color = '#ff8a8a'; scanResult.appendChild(raw);
-        var againBtn = scanEl('button', 'scan-cancel', '重新上传'); againBtn.type = 'button'; againBtn.addEventListener('click', cancelScan); scanResult.appendChild(againBtn);
+        var raw = scanEl('div', 'scan-result-raw', text);
+        if (isError) raw.style.color = '#ff8a8a';
+        scanResult.appendChild(raw);
+
+        var againBtn = scanEl('button', 'scan-cancel', '重新上传');
+        againBtn.type = 'button';
+        againBtn.addEventListener('click', cancelScan);
+        scanResult.appendChild(againBtn);
         scanResult.classList.add('show');
     }
 
     window.goToAIScreen = function() {
-        var library = document.getElementById('library-section'); if (!library) return;
+        var library = document.getElementById('library-section');
+        if (!library) return;
         if (aiChatBox.classList.contains('show')) closeChat();
         library.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        setTimeout(function() { if (!scanUpload.classList.contains('show')) scanBtn.click(); }, 1000);
+        setTimeout(function() {
+            if (!scanUpload.classList.contains('show')) scanBtn.click();
+        }, 1000);
     };
 
     /* ==========================================================
-       AI 助手（聊天） —— 串行队列 + 429 长退避
+       12. AI 聊天
        ========================================================== */
     var isAILoading = false;
     var SYSTEM_PROMPT_TEXT = "你是'小树'，湛江红树林生态科普专家。请遵守以下规则：1. 如果用户消息附有[站内知识库参考资料]，你必须严格优先依据参考资料中的内容回答，不要自己瞎编。2. 只有当参考资料没有相关内容时，才可以使用你自身的知识进行友好解答。3. 回答简洁准确，语气亲切，控制在150字内。4. 红线：拒绝任何色情暴力、敏感政治话题。";
-    var chatHistory = [{ role: "system", content: SYSTEM_PROMPT_TEXT }];
+    var chatHistory = [{ role: 'system', content: SYSTEM_PROMPT_TEXT }];
 
     var QUICK_ANSWERS = [
         { test: /^1\s*\+\s*1\s*=*\s*\??$/, answer: '1 + 1 = 2 😊 虽然这很简单，但红树林也有它的数学——叶片在枝头呈螺旋排列，遵循斐波那契数列。一起来认识这片森林吧，别忘了保护环境哦 🌿' },
-        { test: /^你好|hi|hello|嗨$/i, answer: '你好！我是红树林 AI 导游小树 🌿 想了解植物、鸟类、鱼类、虫类还是环保？问我就行。别忘了保护环境哦！' },
-        { test: /^谢谢|thanks$/i, answer: '不客气！认识红树林、保护红树林，都是很美好的事。让我们一起守护这片海上森林 🌊🌿' },
-        { test: /^再见|拜拜|bye$/i, answer: '再见！记得常回来看看这片红树林。每一次关注，都是对自然的守护 🌿' },
-        { test: /^你是谁|你叫什么/i, answer: '我是"小树"——红树林 AI 导游。专门解答红树林生态、动植物和环保问题，随时问我哦 🌿' }
+        { test: /^(你好|hi|hello|嗨)$/i, answer: '你好！我是红树林 AI 导游小树 🌿 想了解植物、鸟类、鱼类、虫类还是环保？问我就行。别忘了保护环境哦！' },
+        { test: /^(谢谢|thanks)$/i, answer: '不客气！认识红树林、保护红树林，都是很美好的事。让我们一起守护这片海上森林 🌊🌿' },
+        { test: /^(再见|拜拜|bye)$/i, answer: '再见！记得常回来看看这片红树林。每一次关注，都是对自然的守护 🌿' },
+        { test: /^(你是谁|你叫什么)/i, answer: '我是"小树"——红树林 AI 导游。专门解答红树林生态、动植物和环保问题，随时问我哦 🌿' }
     ];
-    function tryQuickAnswer(text) { var trimmed = text.trim(); for (var i = 0; i < QUICK_ANSWERS.length; i++) { if (QUICK_ANSWERS[i].test.test(trimmed)) return QUICK_ANSWERS[i].answer; } return null; }
-
-    var pupils = document.querySelectorAll('.pupil');
-    if (!isTouchDevice) {
-        document.addEventListener('mousemove', function(e) {
-            var rect = aiFloatBtn.getBoundingClientRect(), cx = rect.left + rect.width / 2, cy = rect.top + rect.height / 2;
-            var dx = e.clientX - cx, dy = e.clientY - cy, angle = Math.atan2(dy, dx), dist = Math.min(Math.sqrt(dx * dx + dy * dy), 3);
-            var x = Math.cos(angle) * dist, y = Math.sin(angle) * dist;
-            for (var i = 0; i < pupils.length; i++) pupils[i].style.transform = 'translate(' + x + 'px, ' + y + 'px)';
-        });
+    function tryQuickAnswer(text) {
+        var trimmed = text.trim();
+        for (var i = 0; i < QUICK_ANSWERS.length; i++) {
+            if (QUICK_ANSWERS[i].test.test(trimmed)) return QUICK_ANSWERS[i].answer;
+        }
+        return null;
     }
 
     function openChat() {
-        aiChatBox.classList.add('show'); document.getElementById('jump-ai-btn').classList.add('show');
-        if (!isTouchDevice) { aiInput.focus(); document.body.style.cursor = 'auto'; cursorDot.style.display = 'none'; cursorRing.style.display = 'none'; }
+        aiChatBox.classList.add('show');
+        document.getElementById('jump-ai-btn').classList.add('show');
+        if (!('ontouchstart' in window)) aiInput.focus();
     }
     function closeChat() {
-        aiChatBox.classList.remove('show'); document.getElementById('jump-ai-btn').classList.remove('show');
-        if (!isTouchDevice) { document.body.style.cursor = 'none'; cursorDot.style.display = 'block'; cursorRing.style.display = 'block'; }
+        aiChatBox.classList.remove('show');
+        document.getElementById('jump-ai-btn').classList.remove('show');
     }
 
     var isSpriteDragging = false, spriteStartX = 0, spriteStartY = 0, initialLeft = 0, initialTop = 0;
@@ -2482,38 +2855,78 @@
         var clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
         var clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
         var rect = aiAssistantContainer.getBoundingClientRect();
-        spriteStartX = clientX; spriteStartY = clientY; initialLeft = rect.left; initialTop = rect.top;
-        aiAssistantContainer.style.bottom = 'auto'; aiAssistantContainer.style.right = 'auto';
-        aiAssistantContainer.style.left = initialLeft + 'px'; aiAssistantContainer.style.top = initialTop + 'px';
-        document.addEventListener('mousemove', dragMove); document.addEventListener('mouseup', dragEnd);
-        document.addEventListener('touchmove', dragMove, { passive: false }); document.addEventListener('touchend', dragEnd);
+        spriteStartX = clientX; spriteStartY = clientY;
+        initialLeft = rect.left; initialTop = rect.top;
+        aiAssistantContainer.style.bottom = 'auto';
+        aiAssistantContainer.style.right = 'auto';
+        aiAssistantContainer.style.left = initialLeft + 'px';
+        aiAssistantContainer.style.top = initialTop + 'px';
+        document.addEventListener('mousemove', dragMove);
+        document.addEventListener('mouseup', dragEnd);
+        document.addEventListener('touchmove', dragMove, { passive: false });
+        document.addEventListener('touchend', dragEnd);
     }
     function dragMove(e) {
         var clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
         var clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
         var dx = clientX - spriteStartX, dy = clientY - spriteStartY;
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) { isSpriteDragging = true; if (e.cancelable) e.preventDefault(); }
-        if (isSpriteDragging) { aiAssistantContainer.style.left = (initialLeft + dx) + 'px'; aiAssistantContainer.style.top = (initialTop + dy) + 'px'; }
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+            isSpriteDragging = true;
+            if (e.cancelable) e.preventDefault();
+        }
+        if (isSpriteDragging) {
+            aiAssistantContainer.style.left = (initialLeft + dx) + 'px';
+            aiAssistantContainer.style.top = (initialTop + dy) + 'px';
+        }
     }
-    function dragEnd() { document.removeEventListener('mousemove', dragMove); document.removeEventListener('mouseup', dragEnd); document.removeEventListener('touchmove', dragMove); document.removeEventListener('touchend', dragEnd); }
+    function dragEnd() {
+        document.removeEventListener('mousemove', dragMove);
+        document.removeEventListener('mouseup', dragEnd);
+        document.removeEventListener('touchmove', dragMove);
+        document.removeEventListener('touchend', dragEnd);
+    }
 
     aiFloatBtn.addEventListener('mousedown', dragStart);
     aiFloatBtn.addEventListener('touchstart', dragStart, { passive: false });
     aiFloatBtn.addEventListener('click', function() {
         if (isSpriteDragging) { isSpriteDragging = false; return; }
-        aiFloatBtn.classList.remove('breathe'); void aiFloatBtn.offsetWidth; aiFloatBtn.classList.add('breathe');
-        setTimeout(function() { if (aiChatBox.classList.contains('show')) closeChat(); else openChat(); }, 250);
+        aiFloatBtn.classList.remove('breathe');
+        void aiFloatBtn.offsetWidth;
+        aiFloatBtn.classList.add('breathe');
+        setTimeout(function() {
+            if (aiChatBox.classList.contains('show')) closeChat(); else openChat();
+        }, 250);
     });
     aiCloseBtn.addEventListener('click', closeChat);
+
+    var pupils = document.querySelectorAll('.pupil');
+    if (!('ontouchstart' in window)) {
+        document.addEventListener('mousemove', function(e) {
+            var rect = aiFloatBtn.getBoundingClientRect();
+            var cx = rect.left + rect.width / 2;
+            var cy = rect.top + rect.height / 2;
+            var dx = e.clientX - cx;
+            var dy = e.clientY - cy;
+            var angle = Math.atan2(dy, dx);
+            var dist = Math.min(Math.sqrt(dx * dx + dy * dy), 3);
+            var x = Math.cos(angle) * dist;
+            var y = Math.sin(angle) * dist;
+            for (var i = 0; i < pupils.length; i++) {
+                pupils[i].style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+            }
+        });
+    }
 
     aiClearBtn.addEventListener('click', function() {
         if (confirm('确定要清空所有的聊天记录吗？')) {
             localStorage.removeItem('mangroveChatHistory');
-            chatHistory = [{ role: "system", content: SYSTEM_PROMPT_TEXT }];
+            chatHistory = [{ role: 'system', content: SYSTEM_PROMPT_TEXT }];
             aiMessages.textContent = '';
-            var hello = document.createElement('div'); hello.className = 'ai-message ai-message-bot';
+            var hello = document.createElement('div');
+            hello.className = 'ai-message ai-message-bot';
             hello.textContent = '你好，我是小树。关于红树林的植物、鸟类、鱼类、虫类或环保问题，都可以问我。';
-            aiMessages.appendChild(hello); saveChatHistory();
+            aiMessages.appendChild(hello);
+            saveChatHistory();
         }
     });
 
@@ -2521,8 +2934,11 @@
         try {
             var msgs = aiMessages.querySelectorAll('.ai-message'), arr = [];
             for (var i = 0; i < msgs.length; i++) {
-                var m = msgs[i]; if (m.classList.contains('ai-message-loading')) continue;
-                var role = m.classList.contains('ai-message-user') ? 'user' : 'bot'; var text = (m.textContent || '').trim(); if (!text) continue;
+                var m = msgs[i];
+                if (m.classList.contains('ai-message-loading')) continue;
+                var role = m.classList.contains('ai-message-user') ? 'user' : 'bot';
+                var text = (m.textContent || '').trim();
+                if (!text) continue;
                 arr.push({ role: role, text: text });
             }
             if (arr.length > 60) arr = arr.slice(-60);
@@ -2532,18 +2948,40 @@
     function renderChatMessages(arr) {
         aiMessages.textContent = '';
         for (var i = 0; i < arr.length; i++) {
-            var m = arr[i]; if (!m || typeof m.text !== 'string') continue; var text = m.text.trim(); if (!text) continue;
-            var msg = document.createElement('div'); msg.className = 'ai-message ai-message-' + (m.role === 'user' ? 'user' : 'bot'); msg.textContent = text; aiMessages.appendChild(msg);
+            var m = arr[i];
+            if (!m || typeof m.text !== 'string') continue;
+            var text = m.text.trim();
+            if (!text) continue;
+            var msg = document.createElement('div');
+            msg.className = 'ai-message ai-message-' + (m.role === 'user' ? 'user' : 'bot');
+            msg.textContent = text;
+            aiMessages.appendChild(msg);
         }
         aiMessages.scrollTop = aiMessages.scrollHeight;
     }
     function loadChatHistory() {
-        var saved = localStorage.getItem('mangroveChatHistory'); if (!saved) return;
-        if (saved.charAt(0) === '[') { try { var arr = JSON.parse(saved); if (Array.isArray(arr) && arr.length > 0) { renderChatMessages(arr); return; } } catch (e) {} }
+        var saved = localStorage.getItem('mangroveChatHistory');
+        if (!saved) return;
+        if (saved.charAt(0) === '[') {
+            try {
+                var arr = JSON.parse(saved);
+                if (Array.isArray(arr) && arr.length > 0) { renderChatMessages(arr); return; }
+            } catch (e) {}
+        }
         if (saved.indexOf('ai-message') >= 0 || saved.charAt(0) === '<') {
             try {
-                var parser = new DOMParser(); var doc = parser.parseFromString(saved, 'text/html'); var msgs = doc.querySelectorAll('.ai-message'); var arr2 = [];
-                for (var i = 0; i < msgs.length; i++) { var m = msgs[i]; if (m.classList.contains('ai-message-loading')) continue; var role = m.classList.contains('ai-message-user') ? 'user' : 'bot'; var text = (m.textContent || '').trim(); if (!text) continue; arr2.push({ role: role, text: text }); }
+                var parser = new DOMParser();
+                var doc = parser.parseFromString(saved, 'text/html');
+                var msgs = doc.querySelectorAll('.ai-message');
+                var arr2 = [];
+                for (var i = 0; i < msgs.length; i++) {
+                    var m = msgs[i];
+                    if (m.classList.contains('ai-message-loading')) continue;
+                    var role = m.classList.contains('ai-message-user') ? 'user' : 'bot';
+                    var text = (m.textContent || '').trim();
+                    if (!text) continue;
+                    arr2.push({ role: role, text: text });
+                }
                 if (arr2.length > 0) { renderChatMessages(arr2); saveChatHistory(); return; }
             } catch (e) {}
         }
@@ -2552,111 +2990,107 @@
     loadChatHistory();
 
     function createLoadingBubble() {
-        var div = document.createElement('div'); div.className = 'ai-message ai-message-loading';
-        var d1 = document.createElement('span'); d1.className = 'ai-loading-dot';
-        var d2 = document.createElement('span'); d2.className = 'ai-loading-dot';
-        var d3 = document.createElement('span'); d3.className = 'ai-loading-dot';
-        div.appendChild(d1); div.appendChild(d2); div.appendChild(d3); return div;
+        var div = document.createElement('div');
+        div.className = 'ai-message ai-message-loading';
+        for (var i = 0; i < 3; i++) {
+            var d = document.createElement('span');
+            d.className = 'ai-loading-dot';
+            div.appendChild(d);
+        }
+        return div;
     }
 
-    /* 聊天请求核心：串行队列 */
+    function appendMessage(role, text) {
+        var msg = document.createElement('div');
+        msg.className = 'ai-message ai-message-' + role;
+        msg.textContent = text;
+        aiMessages.appendChild(msg);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+        saveChatHistory();
+    }
+
     function doChatFetch(text, loadingDiv) {
         var kbHits = (window.kbSearch ? window.kbSearch(text) : []);
-        var kbRef = kbHits.length ? ('\n\n[站内知识库参考资料]\n' + kbHits.map(function(h){ return '· ' + h.n + '：' + h.d + '；' + h.f; }).join('\n')) : '';
-        chatHistory.push({ role: "user", content: text + kbRef });
+        var kbRef = kbHits.length
+            ? ('\n\n[站内知识库参考资料]\n' + kbHits.map(function(h) { return '· ' + h.n + '：' + h.d + '；' + h.f; }).join('\n'))
+            : '';
+        chatHistory.push({ role: 'user', content: text + kbRef });
         if (chatHistory.length > 11) chatHistory = [chatHistory[0]].concat(chatHistory.slice(-10));
 
-        var modelsToTry = [API_CONFIG.chatModel, API_CONFIG.chatFallback];
-        var modelIdx = 0;
-
-        function attemptFetch(attempt) {
-            if (modelIdx >= modelsToTry.length) {
-                if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
-                appendMessage('bot', '请求失败，请稍后再试。'); isAILoading = false; saveChatHistory(); return;
+        callAPI({
+            models: API_CONFIG.chatModels,
+            messages: chatHistory,
+            temperature: 0.7,
+            max_tokens: API_CONFIG.maxTokensChat,
+            timeout: API_CONFIG.chatTimeout
+        }).then(function(data) {
+            if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
+            addQuota('chat'); // 成功计次
+            var reply = '';
+            if (data && data.choices && data.choices[0] && data.choices[0].message) {
+                var m = data.choices[0].message;
+                reply = String(m.content || '').trim() || String(m.reasoning_content || '').trim();
             }
-            var currentModel = modelsToTry[modelIdx];
-            var controller = new AbortController();
-            var timeoutId = setTimeout(function() { try { controller.abort(); } catch (e) {} }, API_CONFIG.chatTimeout);
-
-            fetch(API_CONFIG.url, {
-                method: 'POST',
-                headers: buildHeaders(),
-                body: JSON.stringify({ model: currentModel, messages: chatHistory, max_tokens: 400, temperature: 0.7 }),
-                signal: controller.signal
-            }).then(function(response) { clearTimeout(timeoutId); return readApiResponse(response); })
-            .then(function(data) {
-                if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
-                var reply = '';
-                if (data.choices && data.choices[0] && data.choices[0].message) {
-                    var _m = data.choices[0].message || {};
-                    reply = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim();
-                }
-                if (reply) {
-                    appendMessage('bot', reply); chatHistory.push({ role: "assistant", content: reply }); isAILoading = false; saveChatHistory();
-                } else { modelIdx++; attemptFetch(0); }
-            }).catch(function(err) {
-                clearTimeout(timeoutId);
-                var isTimeout = err && (err.name === 'AbortError' || err.name === 'TimeoutError');
-                var isNetwork = err && err.name === 'TypeError';
-                var is429 = err && err.isHttp && err.status === 429;
-                var isHttp5xx = err && err.isHttp && [500, 502, 503, 504].indexOf(err.status) > -1;
-
-                // 429：免费模型并发限制，等待 4 秒后同模型重试一次，再不行才换模型
-                if (is429 && attempt < 1) {
-                    setTimeout(function() { attemptFetch(attempt + 1); }, 4000);
-                    return;
-                }
-                if ((isTimeout || isNetwork || isHttp5xx) && attempt < 1) {
-                    setTimeout(function() { attemptFetch(attempt + 1); }, 1500);
-                } else {
-                    modelIdx++; attemptFetch(0);
-                }
-            });
-        }
-        attemptFetch(0);
+            if (reply) {
+                appendMessage('bot', reply);
+                chatHistory.push({ role: 'assistant', content: reply });
+            } else {
+                appendMessage('bot', '抱歉，我一时没想好怎么回答，换个说法再问我一次吧 🌿');
+            }
+            isAILoading = false;
+            saveChatHistory();
+        }).catch(function(err) {
+            if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
+            appendMessage('bot', friendlyError(err) + ' 🌿');
+            isAILoading = false;
+            saveChatHistory();
+            if (window.console && err) console.warn('[chat]', err.status, err.message, err.body);
+        });
     }
 
     function sendAIMessage() {
         var text = aiInput.value.trim();
         if (!text || isAILoading) return;
 
-        appendMessage('user', text); aiInput.value = '';
+        // 检查本地聊天限额（每天20次）
+        if (!checkQuota('chat')) {
+            appendMessage('bot', '今日聊天次数已用尽（防刷限制），明天再来吧 🌿');
+            return;
+        }
+
+        appendMessage('user', text);
+        aiInput.value = '';
+
         var quick = tryQuickAnswer(text);
         if (quick) {
-            var loadingDivQ = createLoadingBubble(); aiMessages.appendChild(loadingDivQ); aiMessages.scrollTop = aiMessages.scrollHeight;
-            setTimeout(function() { if (loadingDivQ.parentNode) aiMessages.removeChild(loadingDivQ); appendMessage('bot', quick); }, 180);
+            var loadingDivQ = createLoadingBubble();
+            aiMessages.appendChild(loadingDivQ);
+            aiMessages.scrollTop = aiMessages.scrollHeight;
+            setTimeout(function() {
+                if (loadingDivQ.parentNode) aiMessages.removeChild(loadingDivQ);
+                appendMessage('bot', quick);
+            }, 180);
             return;
         }
 
         isAILoading = true;
-        var loadingDiv = createLoadingBubble(); aiMessages.appendChild(loadingDiv); aiMessages.scrollTop = aiMessages.scrollHeight;
-
-        // 串行队列：前一个请求彻底结束后，才发下一个
-        chatQueue = chatQueue.then(function() {
-            return new Promise(function(resolve) {
-                doChatFetch(text, loadingDiv);
-                var check = setInterval(function() {
-                    if (!isAILoading) { clearInterval(check); resolve(); }
-                }, 100);
-            });
-        });
-    }
-
-    function appendMessage(role, text) {
-        var msg = document.createElement('div'); msg.className = 'ai-message ai-message-' + role; msg.textContent = text;
-        aiMessages.appendChild(msg); aiMessages.scrollTop = aiMessages.scrollHeight; saveChatHistory();
+        var loadingDiv = createLoadingBubble();
+        aiMessages.appendChild(loadingDiv);
+        aiMessages.scrollTop = aiMessages.scrollHeight;
+        doChatFetch(text, loadingDiv);
     }
     aiSendBtn.addEventListener('click', sendAIMessage);
     aiInput.addEventListener('keypress', function(e) { if (e.key === 'Enter') sendAIMessage(); });
 
 })();
 </script>
+
 <!-- ==================== 站内搜索 + 私有知识库（RAG） ==================== -->
 <div class="kb-box" id="kbBox" style="display:none;">
   <div class="kb-head" id="kbHead">
     <span class="kb-ico">🔎</span>
     <input id="kbInput" type="text" placeholder="搜站内物种：白鹭 / 金鲳鱼 / 秋茄…" autocomplete="off">
-    <span class="kb-col" id="kbCol" title="收起/展开">—</span>
+    <span class="kb-col" id="kbCol" title="点击缩小/展开" data-tip="点击缩小">—</span>
     <span class="kb-grip" title="按住拖动">⠿</span>
   </div>
   <div class="kb-list" id="kbList"><div class="kb-empty">输入关键词试试：白鹭、招潮蟹、秋茄、虎斑蝶…<br>点击结果跳转对应页面</div></div>
@@ -2664,6 +3098,8 @@
 <script>
 (function () {
   'use strict';
+  if (window.__BLOCKED__) return;
+
   var KB = [
     { n:'白鹭', la:'Egretta garzetta', en:'Little Egret', cat:'鸟类', pg:'bird.html', d:'春季门面鸟：每年4-6月是繁殖育雏的黄金时节，湛江温暖的红树林湿地是它们的大本营。', f:'白鹭只选水质清洁、鱼虾丰富的湿地栖息，被称为"环境检测鸟"。' },
     { n:'池鹭', la:'Ardeola bacchus', en:'Chinese Pond Heron', cat:'鸟类', pg:'bird.html', d:'红树林常见留鸟，浅水处觅食、树冠上休息。', f:'羽毛随季节换装：夏天栗红色，冬天变褐色条纹"迷彩服"。' },
@@ -2703,26 +3139,163 @@
     { n:'中华大刀螳', la:'Tenodera sinensis', en:'Chinese Mantis', cat:'昆虫', pg:'bug.html', d:'伏在枝条上一动不动等待猎物，出击快如闪电。', f:'头部能180度旋转，是昆虫中唯一能"回头看"的。' },
     { n:'斑络新妇', la:'Nephila pilipes', en:'Giant Wood Spider', cat:'昆虫', pg:'bug.html', d:'最大的结网蜘蛛，雌蛛可达5厘米，金网直径超一米。', f:'金色蛛丝反射紫外线，反而更容易吸引昆虫撞上来。' }
   ];
-  var box = document.getElementById('kbBox'), input = document.getElementById('kbInput'), list = document.getElementById('kbList'), head = document.getElementById('kbHead'), dockEl = document.getElementById('library-section');
+
+  var box = document.getElementById('kbBox'),
+      input = document.getElementById('kbInput'),
+      list = document.getElementById('kbList'),
+      head = document.getElementById('kbHead'),
+      dockEl = document.getElementById('library-section');
+
   var pos = { l: 16, t: 140 };
-  function place() { var x = Math.max(6, Math.min(window.innerWidth - box.offsetWidth - 6, pos.l)); var y = Math.max(6, Math.min(window.innerHeight - 52, pos.t)); box.style.left = x + 'px'; box.style.top = y + 'px'; }
-  function showOnce() { if (box.dataset.shown === '1') return; box.dataset.shown = '1'; box.style.display = 'block'; place(); }
-  function checkDock() { if (!dockEl) { showOnce(); return; } var r = dockEl.getBoundingClientRect(); if (r.top < window.innerHeight * 0.8) showOnce(); }
-  window.addEventListener('scroll', checkDock, { passive: true }); checkDock();
+
+  function place() {
+    var x = Math.max(6, Math.min(window.innerWidth - box.offsetWidth - 6, pos.l));
+    var y = Math.max(6, Math.min(window.innerHeight - 52, pos.t));
+    box.style.left = x + 'px';
+    box.style.top = y + 'px';
+  }
+  function showOnce() {
+    if (box.dataset.shown === '1') return;
+    box.dataset.shown = '1';
+    box.style.display = 'block';
+    place();
+  }
+  function checkDock() {
+    if (!dockEl) { showOnce(); return; }
+    var r = dockEl.getBoundingClientRect();
+    if (r.top < window.innerHeight * 0.8) showOnce();
+  }
+  window.addEventListener('scroll', checkDock, { passive: true });
+  checkDock();
   window.addEventListener('resize', function () { if (box.style.display !== 'none') place(); });
+
   var dragging = false, sx = 0, sy = 0, ox = 0, oy = 0;
-  function dStart(e) { if (e.target && (e.target.id === 'kbInput' || e.target.id === 'kbCol')) return; dragging = true; var t = e.touches ? e.touches[0] : e; var r = box.getBoundingClientRect(); sx = t.clientX; sy = t.clientY; ox = r.left; oy = r.top; box.style.right = 'auto'; document.addEventListener('mousemove', dMove); document.addEventListener('mouseup', dEnd); document.addEventListener('touchmove', dMove, { passive: false }); document.addEventListener('touchend', dEnd); if (e.cancelable) e.preventDefault(); }
-  function dMove(e) { if (!dragging) return; var t = e.touches ? e.touches[0] : e; pos.l = Math.max(6, Math.min(window.innerWidth - box.offsetWidth - 6, ox + (t.clientX - sx))); pos.t = Math.max(6, Math.min(window.innerHeight - 52, oy + (t.clientY - sy))); box.style.left = pos.l + 'px'; box.style.top = pos.t + 'px'; if (e.cancelable) e.preventDefault(); }
-  function dEnd() { dragging = false; document.removeEventListener('mousemove', dMove); document.removeEventListener('mouseup', dEnd); document.removeEventListener('touchmove', dMove); document.removeEventListener('touchend', dEnd); }
-  head.addEventListener('mousedown', dStart); head.addEventListener('touchstart', dStart, { passive: false });
-  document.getElementById('kbCol').addEventListener('click', function () { box.classList.toggle('collapsed'); this.textContent = box.classList.contains('collapsed') ? '＋' : '—'; });
-  function search(q) { q = String(q || '').trim().toLowerCase(); if (!q) return []; var toks = q.split(/[\s,，。、？?！!]+/).filter(function (t) { return t.length; }); if (!toks.length) return []; return KB.map(function (e) { var sc = 0; var la = (e.la || '').toLowerCase(), en = (e.en || '').toLowerCase(); toks.forEach(function (t) { if (e.n.indexOf(t) > -1) sc += 4; else if (en.indexOf(t) > -1 || la.indexOf(t) > -1) sc += 2; if ((e.d || '').indexOf(t) > -1 || (e.f || '').indexOf(t) > -1) sc += 1; }); return { e: e, sc: sc }; }).filter(function (x) { return x.sc > 0; }).sort(function (a, b) { return b.sc - a.sc; }).map(function (x) { return x.e; }); }
+  function dStart(e) {
+    if (e.target && (e.target.id === 'kbInput' || e.target.id === 'kbCol')) return;
+    dragging = true;
+    var t = e.touches ? e.touches[0] : e;
+    var r = box.getBoundingClientRect();
+    sx = t.clientX; sy = t.clientY; ox = r.left; oy = r.top;
+    box.style.right = 'auto';
+    document.addEventListener('mousemove', dMove);
+    document.addEventListener('mouseup', dEnd);
+    document.addEventListener('touchmove', dMove, { passive: false });
+    document.addEventListener('touchend', dEnd);
+    if (e.cancelable) e.preventDefault();
+  }
+  function dMove(e) {
+    if (!dragging) return;
+    var t = e.touches ? e.touches[0] : e;
+    pos.l = Math.max(6, Math.min(window.innerWidth - box.offsetWidth - 6, ox + (t.clientX - sx)));
+    pos.t = Math.max(6, Math.min(window.innerHeight - 52, oy + (t.clientY - sy)));
+    box.style.left = pos.l + 'px';
+    box.style.top = pos.t + 'px';
+    if (e.cancelable) e.preventDefault();
+  }
+  function dEnd() {
+    dragging = false;
+    document.removeEventListener('mousemove', dMove);
+    document.removeEventListener('mouseup', dEnd);
+    document.removeEventListener('touchmove', dMove);
+    document.removeEventListener('touchend', dEnd);
+  }
+  head.addEventListener('mousedown', dStart);
+  head.addEventListener('touchstart', dStart, { passive: false });
+
+  var kbCol = document.getElementById('kbCol');
+  kbCol.addEventListener('click', function () {
+    box.classList.toggle('collapsed');
+    var isCollapsed = box.classList.contains('collapsed');
+    this.textContent = isCollapsed ? '＋' : '—';
+    this.setAttribute('data-tip', isCollapsed ? '点击展开' : '点击缩小');
+    this.setAttribute('title', isCollapsed ? '点击展开' : '点击缩小');
+  });
+
+  function search(q) {
+    q = String(q || '').trim().toLowerCase();
+    if (!q) return [];
+    var toks = q.split(/[\s,，。、？?！!]+/).filter(function (t) { return t.length; });
+    if (!toks.length) return [];
+    return KB.map(function (e) {
+      var sc = 0;
+      var la = (e.la || '').toLowerCase(), en = (e.en || '').toLowerCase();
+      toks.forEach(function (t) {
+        if (e.n.indexOf(t) > -1) sc += 4;
+        else if (en.indexOf(t) > -1 || la.indexOf(t) > -1) sc += 2;
+        if ((e.d || '').indexOf(t) > -1 || (e.f || '').indexOf(t) > -1) sc += 1;
+      });
+      return { e: e, sc: sc };
+    }).filter(function (x) { return x.sc > 0; })
+      .sort(function (a, b) { return b.sc - a.sc; })
+      .map(function (x) { return x.e; });
+  }
   window.kbSearch = function (text) { return search(text).slice(0, 2); };
-  var JSMAP = { '白鹭':['spring',0], '池鹭':['spring',1], '苍鹭':['spring',2], '栗喉蜂虎':['summer',0], '水雉':['summer',1], '夜鹭':['summer',2], '大白鹭':['autumn',0], '彩鹮':['autumn',1], '黄嘴白鹭':['autumn',2], '黑脸琵鹭':['winter',0], '鸬鹚':['winter',1], '绿翅鸭':['winter',2], '弧边招潮蟹':['tidal',0], '弹涂鱼':['tidal',1], '锯缘青蟹':['tidal',2], '鲻鱼':['root',0], '黄鳍棘鲷':['root',1], '鲈鱼':['root',2], '卵形鲳鲹':['coastal',0], '斜带石斑鱼':['coastal',1], '露兜树':['allyear',0], '苦郎树':['allyear',1], '老鼠簕':['spring',0], '马鞍藤':['spring',1], '黄槿':['summer',0], '红海榄':['summer',1], '秋茄':['autumn',0], '杨叶肖槿':['autumn',1], '海杧果':['winter',0], '木榄':['winter',1], '玉带凤蝶':['bug',0], '蓝点紫斑蝶':['bug',1], '虎斑蝶':['bug',2], '迁粉蝶':['bug',3], '碧伟蜓':['bug',4], '中华大刀螳':['bug',5], '斑络新妇':['bug',6] };
-  function kbJumpTo(e) { var payload = { pg: e.pg }; if (JSMAP[e.n]) payload.js = JSMAP[e.n]; try { sessionStorage.setItem('kbJump', JSON.stringify(payload)); } catch (err) {} if (typeof navigateTo === 'function') navigateTo(e.pg); else location.href = e.pg; }
-  function render(q) { var hits = search(q); if (!q.trim()) { list.innerHTML = '<div class="kb-empty">输入关键词试试：白鹭、招潮蟹、秋茄、虎斑蝶…<br>点击结果跳转对应页面</div>'; return; } if (!hits.length) { list.innerHTML = '<div class="kb-empty">站内没有匹配的物种<br>试试：白鹭、弹涂鱼、秋茄、招潮蟹</div>'; return; } list.innerHTML = ''; hits.forEach(function (e) { var div = document.createElement('div'); div.className = 'kb-item'; var main = document.createElement('div'); var nm = document.createElement('div'); nm.className = 'k-name'; nm.textContent = e.n; var sub = document.createElement('div'); sub.className = 'k-sub'; sub.textContent = (e.la || '') + (e.en ? ' · ' + e.en : ''); main.appendChild(nm); main.appendChild(sub); var cat = document.createElement('span'); cat.className = 'k-cat'; cat.textContent = e.cat; div.appendChild(main); div.appendChild(cat); div.addEventListener('click', function () { kbJumpTo(e); }); list.appendChild(div); }); }
+
+  var JSMAP = {
+    '白鹭':['spring',0], '池鹭':['spring',1], '苍鹭':['spring',2],
+    '栗喉蜂虎':['summer',0], '水雉':['summer',1], '夜鹭':['summer',2],
+    '大白鹭':['autumn',0], '彩鹮':['autumn',1], '黄嘴白鹭':['autumn',2],
+    '黑脸琵鹭':['winter',0], '鸬鹚':['winter',1], '绿翅鸭':['winter',2],
+    '弧边招潮蟹':['tidal',0], '弹涂鱼':['tidal',1], '锯缘青蟹':['tidal',2],
+    '鲻鱼':['root',0], '黄鳍棘鲷':['root',1], '鲈鱼':['root',2],
+    '卵形鲳鲹':['coastal',0], '斜带石斑鱼':['coastal',1],
+    '露兜树':['allyear',0], '苦郎树':['allyear',1],
+    '老鼠簕':['spring',0], '马鞍藤':['spring',1],
+    '黄槿':['summer',0], '红海榄':['summer',1],
+    '秋茄':['autumn',0], '杨叶肖槿':['autumn',1],
+    '海杧果':['winter',0], '木榄':['winter',1],
+    '玉带凤蝶':['bug',0], '蓝点紫斑蝶':['bug',1], '虎斑蝶':['bug',2],
+    '迁粉蝶':['bug',3], '碧伟蜓':['bug',4], '中华大刀螳':['bug',5], '斑络新妇':['bug',6]
+  };
+
+  function kbJumpTo(e) {
+    var payload = { pg: e.pg };
+    if (JSMAP[e.n]) payload.js = JSMAP[e.n];
+    try { sessionStorage.setItem('kbJump', JSON.stringify(payload)); } catch (err) {}
+    if (typeof window.navigateTo === 'function') window.navigateTo(e.pg);
+    else location.href = e.pg;
+  }
+
+  function render(q) {
+    var hits = search(q);
+    if (!q.trim()) {
+      list.innerHTML = '<div class="kb-empty">输入关键词试试：白鹭、招潮蟹、秋茄、虎斑蝶…<br>点击结果跳转对应页面</div>';
+      return;
+    }
+    if (!hits.length) {
+      list.innerHTML = '<div class="kb-empty">站内没有匹配的物种<br>试试：白鹭、弹涂鱼、秋茄、招潮蟹</div>';
+      return;
+    }
+    list.innerHTML = '';
+    hits.forEach(function (e) {
+      var div = document.createElement('div');
+      div.className = 'kb-item';
+      var main = document.createElement('div');
+      var nm = document.createElement('div');
+      nm.className = 'k-name';
+      nm.textContent = e.n;
+      var sub = document.createElement('div');
+      sub.className = 'k-sub';
+      sub.textContent = (e.la || '') + (e.en ? ' · ' + e.en : '');
+      main.appendChild(nm);
+      main.appendChild(sub);
+      var cat = document.createElement('span');
+      cat.className = 'k-cat';
+      cat.textContent = e.cat;
+      div.appendChild(main);
+      div.appendChild(cat);
+      div.addEventListener('click', function () { kbJumpTo(e); });
+      list.appendChild(div);
+    });
+  }
   input.addEventListener('input', function () { render(input.value); });
-  input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); var top = search(input.value)[0]; if (top) kbJumpTo(top); } });
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      var top = search(input.value)[0];
+      if (top) kbJumpTo(top);
+    }
+  });
 })();
 </script>
 </body>
