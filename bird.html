@@ -2377,12 +2377,100 @@ const aiMessages = document.getElementById('ai-chat-messages');
 const aiAssistantContainer = document.getElementById('ai-assistant-container');
 const jumpAIBtn = document.getElementById('jump-ai-btn');
 
-/* ===== API 配置（中转站 x666.me） ===== */
+/* ===== API 配置（中转站 x666.me） =====
+   组合拳：
+   ① 域名锁 —— 非白名单域名直接返回假密钥，调用必然 401
+   ② 暴力打乱密钥 —— 4 段拼接 + 3 个假诱饵 + 干扰条件判断
+   ③ 本地限额 —— 每天 chat 20 次 / scan 5 次
+*/
+const _ALLOWED_HOSTS = [
+  'localhost', '127.0.0.1',
+  '.github.io', '.vercel.app', '.netlify.app', '.pages.dev',
+  /* 你自己的域名加在这里，例如：'my-mangrove.cn' */
+];
+
+function _hostAllowed() {
+  try {
+    if (location.protocol === 'file:') return false;
+    var h = location.hostname.toLowerCase();
+    if (!h) return false;
+    for (var i = 0; i < _ALLOWED_HOSTS.length; i++) {
+      var rule = _ALLOWED_HOSTS[i];
+      if (rule.charAt(0) === '.') {
+        if (h === rule.slice(1) || h.endsWith(rule)) return true;
+      } else if (h === rule) {
+        return true;
+      }
+    }
+    return false;
+  } catch (e) { return false; }
+}
+
+/* —— 暴力打乱：4 段拼接 —— */
+var _ka = "sk-qb2Oqm53";
+var _kb = "UGhltge9oTWHg";
+var _kc = "Dvg9N2bG1LFl2fc";
+var _kd = "CT2EURjaFDBK";
+/* —— 假诱饵，永远不参与真实拼接 —— */
+var _fake1 = "sk-this-is-a-fake-key-do-not-use";
+var _fake2 = "sk-dummy-do-not-touch-rotate-please";
+var _fake3 = "sk-expired-2020-please-renew";
+
+function _assembleKey() {
+  var _sig = "v3";
+  if (_sig === "v3") {
+    var buf = [_ka];
+    if (_fake1.length < 5) buf.push(_fake1);   /* 永远不成立，防静态扫描 */
+    buf.push(_kb);
+    buf.push(_kc);
+    if (_fake2.length < 3) buf.push(_fake2);   /* 永远不成立 */
+    buf.push(_kd);
+    var s = buf.join('');
+    if (s.length < 40) return _fake3;          /* 防篡改兜底 */
+    return s;
+  }
+  if (_sig === "v2") return _fake1;
+  return _fake2;
+}
+
+const _apiAccessOk = _hostAllowed();
+
 const API_KEY = (function () {
-  var s = "KBDFajRUE2TCcf2lFL1Gb2N9gvDgHWTo9egtlhGU35mqO2bq-ks"; /* 倒序混淆串：防爬虫特征搜索 */
-  return s.split("").reverse().join("");
+  if (!_apiAccessOk) {
+    try { console.warn('[api] unauthorized host:', location.hostname); } catch (e) {}
+    return _fake2;   /* 未授权域名：拿到假密钥，调用必 401 */
+  }
+  return _assembleKey();
 })();
+
 const API_URL = "https://x666.me/v1/chat/completions";
+
+/* —— 本地限额（localStorage，按天重置） —— */
+const _QUOTA_KEY = 'mg_guard_v2';
+const _QUOTA_LIMIT = { chat: 20, scan: 5 };
+function _todayKey() { return new Date().toISOString().split('T')[0]; }
+
+function verifyQuota(action) {
+  try {
+    var d = _todayKey();
+    var q = JSON.parse(localStorage.getItem(_QUOTA_KEY) || '{}');
+    if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+    if (action === 'chat' && q.chat >= _QUOTA_LIMIT.chat) return false;
+    if (action === 'scan' && q.scan >= _QUOTA_LIMIT.scan) return false;
+    return true;
+  } catch (e) { return true; }
+}
+
+function consumeQuota(action) {
+  try {
+    var d = _todayKey();
+    var q = JSON.parse(localStorage.getItem(_QUOTA_KEY) || '{}');
+    if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+    if (action === 'chat') q.chat++;
+    if (action === 'scan') q.scan++;
+    localStorage.setItem(_QUOTA_KEY, JSON.stringify(q));
+  } catch (e) {}
+}
 
 /* 网络层自动重试：中转站偶发抖动时，连接错误自动重发一次（4xx/5xx 不重试） */
 (function () {
@@ -2613,6 +2701,15 @@ async function sendAIMessage() {
   const text = aiInput.value.trim();
   if (!text || isAILoading) return;
 
+  if (!_apiAccessOk) {
+    appendMessage('bot', '当前域名未授权使用 AI 服务，请通过正规入口访问。');
+    return;
+  }
+  if (!verifyQuota('chat')) {
+    appendMessage('bot', '今日聊天次数已用尽（防刷限制：每天最多 20 次），明天再来吧 🌿');
+    return;
+  }
+
   appendMessage('user', text);
   aiInput.value = '';
   isAILoading = true;
@@ -2645,6 +2742,7 @@ async function sendAIMessage() {
 
     const data = await readApiResponse(response);
     aiMessages.removeChild(loadingDiv);
+    consumeQuota('chat');
 
     if (data.choices && data.choices[0]) {
       const _m = data.choices[0].message || {};
@@ -2776,6 +2874,15 @@ function handleImageFile(file) {
     return;
   }
 
+  if (!_apiAccessOk) {
+    showToast('当前域名未授权使用 AI 识图服务。', { type: 'error', duration: 4000 });
+    return;
+  }
+  if (!verifyQuota('scan')) {
+    showToast('今日识图次数已用尽（防刷限制：每天最多 5 次），明天再来吧 🌿', { type: 'warning', duration: 4000 });
+    return;
+  }
+
   uploadArea.style.display = 'none';
   resultBox.classList.remove('show');
   showLoading();
@@ -2882,6 +2989,7 @@ async function callVisionAPI(base64Data) {
     currentAbortController = null;
 
     const data = await readApiResponse(response);
+    consumeQuota('scan');
     hideLoading();
 
     if (data.choices && data.choices[0]) {
