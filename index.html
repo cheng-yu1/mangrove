@@ -1915,18 +1915,22 @@
 (function () {
     'use strict';
 
-    if (window.location.protocol === 'file:') {
+    // 1. 域名锁与环境检查
+    var loc = window.location;
+    if (loc.protocol === 'file:') {
         document.documentElement.innerHTML =
           '<head><meta charset="utf-8"><title>环境错误</title></head>' +
           '<body style="margin:0;background:#071a12;color:#fff;display:flex;flex-direction:column;' +
           'align-items:center;justify-content:center;height:100vh;font-family:sans-serif;' +
           'font-size:16px;letter-spacing:.1em;text-align:center;line-height:2;padding:20px;">' +
           '<div style="font-size:24px;color:#82e6b4;margin-bottom:20px;">⚠️ 检测到直接双击打开</div>' +
-          '<div>浏览器安全策略（CORS）会拦截 AI 接口请求，导致“API 密钥无效”等报错。<br>' +
-          '请使用 <b>VS Code 的 Live Server</b> 插件打开，或直接部署到 <b>GitHub Pages</b> 后访问。</div></body>';
+          '<div>浏览器安全策略（CORS）会拦截 AI 接口请求。<br>' +
+          '请使用 <b>VS Code 的 Live Server</b> 插件，或部署到 <b>GitHub Pages</b> / <b>Vercel</b> 后访问。</div></body>';
         return;
     }
+    // 如果你想让某些特定域名才能用，可以在这里加白名单，目前为了防止误伤，只拦截纯本地文件。
 
+    // 2. 反爬特征检测
     var ua = navigator.userAgent || '';
     var botRe = /(bot|crawler|spider|scrapy|puppeteer|playwright|selenium|phantomjs|headlesschrome|python-requests|curl\/|wget\/|httpclient)/i;
     var isBot = navigator.webdriver === true || botRe.test(ua);
@@ -1944,6 +1948,7 @@
         return;
     }
 
+    // 3. 基础防调试
     document.addEventListener('contextmenu', function (e) { e.preventDefault(); }, false);
     document.addEventListener('keydown', function (e) {
         var k = (e.key || '').toLowerCase();
@@ -1980,35 +1985,43 @@
     /* ==========================================================
        1. API 配置与防爬限制
        ========================================================== */
-    var _secA = "sk-rzfnpnsadyuikhaunm";
-    var _secB = "quugxxmokiwfsvjulir";
-    var _secC = "bgkinqlmtnu";
-    function getSecretKey() {
-        var _fakeCheck = "something_random"; 
-        if (_fakeCheck === "something_random") {
-            return _secA + _secB + _secC;
+    
+    // 【暴力打乱】把密钥拆成三段，并加入混淆用的假变量
+    var _p1 = "sk-rzfnpnsadyu";
+    var _p2 = "ikhaunmquugxxm";
+    var _p3 = "okiwfsvjulirbgkinqlmtnu";
+    var _fakeDecoy = "sk-this-is-a-fake-key-do-not-use";
+    
+    function retrieveToken() {
+        var _check = "valid";
+        if (_check === "valid") {
+            // 运行时拼合
+            return _p1 + _p2 + _p3;
         }
-        return "invalid_key";
+        return _fakeDecoy;
     }
 
-    function checkQuota(type) {
+    // 【本地限额】防止恶意刷量
+    function verifyQuota(action) {
         try {
-            var today = new Date().toISOString().split('T')[0];
-            var quota = JSON.parse(localStorage.getItem('mg_quota') || '{}');
-            if (quota.date !== today) quota = { date: today, chat: 0, scan: 0 };
-            if (type === 'chat' && quota.chat >= 20) return false;
-            if (type === 'scan' && quota.scan >= 5) return false;
+            var d = new Date().toISOString().split('T')[0];
+            var q = JSON.parse(localStorage.getItem('mg_guard') || '{}');
+            if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+            
+            if (action === 'chat' && q.chat >= 20) return false;
+            if (action === 'scan' && q.scan >= 5) return false; // 每天5次识图
+            
             return true;
         } catch(e) { return true; }
     }
-    function addQuota(type) {
+    function consumeQuota(action) {
         try {
-            var today = new Date().toISOString().split('T')[0];
-            var quota = JSON.parse(localStorage.getItem('mg_quota') || '{}');
-            if (quota.date !== today) quota = { date: today, chat: 0, scan: 0 };
-            if (type === 'chat') quota.chat++;
-            if (type === 'scan') quota.scan++;
-            localStorage.setItem('mg_quota', JSON.stringify(quota));
+            var d = new Date().toISOString().split('T')[0];
+            var q = JSON.parse(localStorage.getItem('mg_guard') || '{}');
+            if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+            if (action === 'chat') q.chat++;
+            if (action === 'scan') q.scan++;
+            localStorage.setItem('mg_guard', JSON.stringify(q));
         } catch(e) {}
     }
 
@@ -2016,11 +2029,16 @@
         urls: [
             'https://api.siliconflow.cn/v1/chat/completions'
         ],
-        scanModels: ['Qwen/Qwen2-VL-7B-Instruct', 'Qwen/Qwen2.5-VL-7B-Instruct'],
+        // 识图备用模型链：主用 7B，不行切 72B，再不行切 2.5
+        scanModels: [
+            'Qwen/Qwen2-VL-7B-Instruct', 
+            'Qwen/Qwen2-VL-72B-Instruct',
+            'Qwen/Qwen2.5-VL-7B-Instruct'
+        ],
         chatModels: ['Qwen/Qwen2.5-7B-Instruct', 'Qwen/Qwen2-7B-Instruct'],
-        scanTimeout: 60000,
+        scanTimeout: 90000, // 识图超时时间延长至 90 秒
         chatTimeout: 45000,
-        maxTokensScan: 1000,
+        maxTokensScan: 1024,
         maxTokensChat: 500
     };
 
@@ -2029,7 +2047,7 @@
     function authHeaders() {
         return {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + getSecretKey()
+            'Authorization': 'Bearer ' + retrieveToken()
         };
     }
 
@@ -2117,7 +2135,8 @@
         if (err.status === 429) return '请求太频繁，请等几秒再试';
         if (err.status === 400 || err.status === 404) return '模型暂不可用，请稍后重试';
         if (err.status) return '服务器繁忙（' + err.status + '），请稍后重试';
-        if (err.name === 'AbortError') return '请求超时，请检查网络后重试';
+        if (err.name === 'AbortError' || err.message === 'ALL_FAILED') return '请求超时或模型无响应，请稍后重试';
+        if (err.name === 'TypeError') return '网络连接失败，请检查网络或跨域设置';
         return '网络异常，请检查网络后重试';
     }
 
@@ -2283,7 +2302,6 @@
     skipBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         clearSceneTimer();
-        // 强制移除所有字幕，让画面干干净净
         for (var i = 0; i < lines.length; i++) {
             lines[i].classList.remove('active');
         }
@@ -2309,12 +2327,10 @@
         setCinemaState(STATE.DONE);
         scrollCue.classList.add('show');
         
-        // 如果是自然播放完，为了保证画面干净，也把所有字幕隐藏
         for (var i = 0; i < lines.length; i++) {
             lines[i].classList.remove('active');
         }
         
-        // 延迟一点显示片尾字幕
         setTimeout(function() {
             endCredit.classList.add('show');
         }, 300);
@@ -2665,8 +2681,9 @@
         if (file.size > 5 * 1024 * 1024) { alert('图片太大了，请选择小于 5MB 的图片。'); return; }
         if (scanBusy) { alert('上一次识别还没完成，请稍等。'); return; }
         
-        if (!checkQuota('scan')) {
-            showScanResult('今日识图次数已用尽（防刷限制）。', true);
+        // 本地限额检查
+        if (!verifyQuota('scan')) {
+            showScanResult('今日识图次数已用尽（防刷限制，每天最多5次）。', true);
             return;
         }
 
@@ -2678,7 +2695,8 @@
 
         var reader = new FileReader();
         reader.onload = function(event) {
-            compressImage(event.target.result, 768, 0.75).then(function(compressed) {
+            // 压缩图片，保持较高清晰度（宽 800px，质量 0.8）
+            compressImage(event.target.result, 800, 0.8).then(function(compressed) {
                 return callAPI({
                     models: API_CONFIG.scanModels,
                     messages: [{
@@ -2694,7 +2712,7 @@
                 });
             }).then(function(data) {
                 resetScanUI();
-                addQuota('scan');
+                consumeQuota('scan'); // 消耗配额
                 var txt = '';
                 if (data && data.choices && data.choices[0] && data.choices[0].message) {
                     var m = data.choices[0].message;
@@ -2727,9 +2745,10 @@
                     c.width = w; c.height = h;
                     var cx = c.getContext('2d');
                     cx.drawImage(img, 0, 0, w, h);
+                    // 确保输出为 jpeg 格式
                     var out = c.toDataURL('image/jpeg', quality);
                     var q = quality;
-                    while (out.length > 350000 && q > 0.4) {
+                    while (out.length > 500000 && q > 0.5) {
                         q -= 0.1;
                         out = c.toDataURL('image/jpeg', q);
                     }
@@ -3031,7 +3050,7 @@
             timeout: API_CONFIG.chatTimeout
         }).then(function(data) {
             if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
-            addQuota('chat');
+            consumeQuota('chat'); // 消耗配额
             var reply = '';
             if (data && data.choices && data.choices[0] && data.choices[0].message) {
                 var m = data.choices[0].message;
@@ -3058,8 +3077,9 @@
         var text = aiInput.value.trim();
         if (!text || isAILoading) return;
 
-        if (!checkQuota('chat')) {
-            appendMessage('bot', '今日聊天次数已用尽（防刷限制），明天再来吧 🌿');
+        // 本地限额检查
+        if (!verifyQuota('chat')) {
+            appendMessage('bot', '今日聊天次数已用尽（防刷限制，每天最多20次），明天再来吧 🌿');
             return;
         }
 
