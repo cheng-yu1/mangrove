@@ -1729,11 +1729,10 @@ function consumeQuota(action) {
 var API_CONFIG = {
   urls: ['https://api.siliconflow.cn/v1/chat/completions'],
   // 核心修复：只保留硅基流动真实支持的视觉模型
-  scanModels: [
-    'Qwen/Qwen2-VL-7B-Instruct', 
-    'Qwen/Qwen2.5-VL-7B-Instruct',
-    'Qwen/Qwen2.5-VL-72B-Instruct'
-  ],
+scanModels: [
+  'Qwen/Qwen3-VL-8B-Instruct', 
+  'Qwen/Qwen2.5-VL-7B-Instruct'
+],
   chatModels: ['Qwen/Qwen2.5-7B-Instruct', 'Qwen/Qwen2-7B-Instruct'],
   scanTimeout: 90000,
   chatTimeout: 45000,
