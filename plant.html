@@ -1728,12 +1728,11 @@ function consumeQuota(action) {
    ========================================================== */
 var API_CONFIG = {
   urls: ['https://api.siliconflow.cn/v1/chat/completions'],
+  // 核心修复：只保留硅基流动真实支持的视觉模型
   scanModels: [
-    'THUDM/GLM-4.5V',
-    'THUDM/GLM-4.1V-9B-Thinking',
-    'Qwen/Qwen2.5-VL-32B-Instruct',
-    'Qwen/Qwen3-VL-8B-Instruct',
-    'deepseek-ai/deepseek-vl2'
+    'Qwen/Qwen2-VL-7B-Instruct', 
+    'Qwen/Qwen2.5-VL-7B-Instruct',
+    'Qwen/Qwen2.5-VL-72B-Instruct'
   ],
   chatModels: ['Qwen/Qwen2.5-7B-Instruct', 'Qwen/Qwen2-7B-Instruct'],
   scanTimeout: 90000,
@@ -1837,6 +1836,7 @@ function friendlyError(err) {
   if (err.status === 401) return 'API 密钥无效，请检查密钥配置。';
   if (err.status === 403) return '当前模型不可用或未授权，请检查账户余额或权限。';
   if (err.status === 404) return 'API 接口不存在。';
+  if (err.status === 400) return '请求参数错误（400），通常是模型不支持或图片格式错误。';
   if (err.status === 429) return '请求太频繁，请等几秒再试';
   if (err.name === 'AbortError' || err.message === 'ALL_FAILED') return '请求超时或模型无响应，请稍后重试';
   if (err.name === 'TypeError') return '网络连接失败，请检查网络（不要直接双击打开 HTML，请用 Live Server 或部署到 GitHub）。';
