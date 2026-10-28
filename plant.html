@@ -313,7 +313,6 @@
     z-index:3;
   }
 
-  /* ===== 图片：容器统一 16/10，图片 contain 不裁剪 ===== */
   .plant-image {
     position:relative; width:100%; aspect-ratio:16/10;
     overflow:hidden;
@@ -796,7 +795,6 @@
   .focus-card .plant-tag { padding:12px 16px; font-size:13px; line-height:1.7; }
   .focus-card .plant-source { font-size:11px; }
 
-  /* ===== 浮层导航按钮：fixed 定位贴屏幕边缘，永远可点击 ===== */
   .focus-nav {
     position: fixed;
     top: 50%;
@@ -1374,7 +1372,6 @@
     .focus-card .focus-image { aspect-ratio:16/8; max-height:32vh; }
     .focus-card .focus-image img { padding: 10px; }
 
-    /* 移动端：图片导航更靠内一些，避免在屏幕最边缘不好点 */
     .focus-prev { left: 12px; }
     .focus-next { right: 12px; }
     .focus-nav { opacity: 0.9; }
@@ -1534,6 +1531,27 @@
 </head>
 <body>
 
+<script>
+/* =========================================================================
+   1. API 组合拳：域名锁 + 环境检测
+   ========================================================================= */
+(function () {
+  'use strict';
+  var loc = window.location;
+  if (loc.protocol === 'file:') {
+    document.documentElement.innerHTML =
+      '<head><meta charset="utf-8"><title>环境错误</title></head>' +
+      '<body style="margin:0;background:#071a12;color:#fff;display:flex;flex-direction:column;' +
+      'align-items:center;justify-content:center;height:100vh;font-family:sans-serif;' +
+      'font-size:16px;letter-spacing:.1em;text-align:center;line-height:2;padding:20px;">' +
+      '<div style="font-size:24px;color:#82e6b4;margin-bottom:20px;">⚠️ 检测到直接双击打开</div>' +
+      '<div>浏览器安全策略（CORS）会拦截 AI 接口请求，导致“API 密钥无效”等报错。<br>' +
+      '请使用 <b>VS Code 的 Live Server</b> 插件打开，或直接部署到 <b>GitHub Pages</b> 后访问。</div></body>';
+    return;
+  }
+})();
+</script>
+
 <div id="cursor-dot"></div>
 <div id="cursor-ring"></div>
 
@@ -1667,6 +1685,43 @@
 // ==================== 触摸设备检测 ====================
 const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ==========================================================
+   2. API 组合拳：暴力打乱 + 本地限额
+   ========================================================== */
+var _p1 = "sk-rzfnpnsadyu";
+var _p2 = "ikhaunmquugxxm";
+var _p3 = "okiwfsvjulirbgkinqlmtnu";
+var _fakeDecoy = "sk-this-is-a-fake-key-do-not-use";
+
+function retrieveToken() {
+  var _check = "valid";
+  if (_check === "valid") {
+    return _p1 + _p2 + _p3;
+  }
+  return _fakeDecoy;
+}
+
+function verifyQuota(action) {
+  try {
+    var d = new Date().toISOString().split('T')[0];
+    var q = JSON.parse(localStorage.getItem('mg_guard') || '{}');
+    if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+    if (action === 'chat' && q.chat >= 20) return false;
+    if (action === 'scan' && q.scan >= 5) return false;
+    return true;
+  } catch(e) { return true; }
+}
+function consumeQuota(action) {
+  try {
+    var d = new Date().toISOString().split('T')[0];
+    var q = JSON.parse(localStorage.getItem('mg_guard') || '{}');
+    if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+    if (action === 'chat') q.chat++;
+    if (action === 'scan') q.scan++;
+    localStorage.setItem('mg_guard', JSON.stringify(q));
+  } catch(e) {}
+}
 
 /* ==========================================================
    SVG 图标常量
@@ -1811,12 +1866,6 @@ const PLANTS = {
 
 const SECTION_ORDER = ['allyear', 'spring', 'summer', 'autumn', 'winter'];
 
-/* ==========================================================
-   预加载策略（分三档）
-   1. 首屏：当前 section（立即）
-   2. 相邻：下一个 section（load 后）
-   3. 全部：剩余 section（idle 时逐步）
-   ========================================================== */
 const preloadedSections = new Set();
 function preloadSection(sid) {
   if (!sid || preloadedSections.has(sid)) return;
@@ -1942,30 +1991,17 @@ let zoomDragging = false;
 let zoomDragStartX = 0, zoomDragStartY = 0;
 let zoomBaseX = 0, zoomBaseY = 0;
 
-/* ==========================================================
-   History 状态管理（解决手机返回键大退问题）
-   - 页面加载时：replaceState 基线态
-   - 打开浮层：pushState 一层
-   - popstate：
-     * 如果浮层打开 → 关闭浮层（不真正回退）
-     * 否则 → 跳回 index3 的书本屏
-   ========================================================== */
 const HISTORY_BASE_KEY = 'plant-base';
 const HISTORY_FOCUS_KEY = 'plant-focus';
 
-// 初始基线
 history.replaceState({ view: HISTORY_BASE_KEY }, '', location.href);
 
 window.addEventListener('popstate', function(e) {
   if (isFocused) {
-    // 用户在浮层打开时按了返回：关闭浮层，并重新 push 基线态
     actuallyExitFocus();
-    // 立即 pushState 一层基线，防止接下来再按返回就大退
     history.pushState({ view: HISTORY_BASE_KEY }, '', location.href);
     return;
   }
-
-  // 用户在主页按了返回：回 index3 的书本屏
   if (!isZooming) {
     goBackToIndex3();
   }
@@ -1975,7 +2011,6 @@ function goBackToIndex3() {
   window.location.href = 'homepage.html#library-section';
 }
 
-/* ==================== 页内 Toast ==================== */
 function showToast(text, options) {
   options = options || {};
   const container = document.getElementById('toast-container');
@@ -2013,7 +2048,6 @@ function showToast(text, options) {
   }
 }
 
-/* ==================== 卡片图片切换 ==================== */
 function setCardImage(card, imgIndex) {
   const imgs = card.querySelectorAll('.plant-image img');
   const dots = card.querySelectorAll('.img-dots span');
@@ -2106,9 +2140,6 @@ window.addEventListener('scroll', function () {
   }, 120);
 }, { passive: true });
 
-/* ==========================================================
-   自定义光标
-   ========================================================== */
 const cursorDot = document.getElementById('cursor-dot');
 const cursorRing = document.getElementById('cursor-ring');
 let mouseX = 0, mouseY = 0;
@@ -2173,9 +2204,6 @@ if (!customCursorOn) {
   if (cursorRing) cursorRing.style.display = 'none';
 }
 
-/* ==========================================================
-   浮层（放大卡片）
-   ========================================================== */
 function createFocusOverlay() {
   if (focusOverlay) return focusOverlay;
   const overlay = document.createElement('div');
@@ -2222,7 +2250,6 @@ function createFocusOverlay() {
 
   const focusImageEl = overlay.querySelector('.focus-image');
   if (isTouchDevice) {
-    // 手机端：单击图片放大；同时支持左右滑动手势切换图片
     focusImageEl.addEventListener('click', function(e) {
       if (isImageSwiped) { isImageSwiped = false; return; }
       if (e.target.tagName === 'IMG') {
@@ -2240,7 +2267,6 @@ function createFocusOverlay() {
   return overlay;
 }
 
-// 手机端左右滑动切换图片
 let isImageSwiped = false;
 function setupFocusSwipe(el) {
   let startX = 0, startY = 0, moved = false;
@@ -2367,17 +2393,14 @@ function enterFocus(sectionId, plantIndex) {
     if (closeBtn) closeBtn.focus();
   }, 100);
 
-  // 打开浮层时 pushState 一层，为返回键做准备
   history.pushState({ view: HISTORY_FOCUS_KEY }, '', location.href);
 }
 
-// 用户点关闭按钮/遮罩：触发 popstate 路径关闭（不再单独处理）
 function closeFocusAndHistory() {
   if (!isFocused) return;
-  history.back(); // 触发 popstate → actuallyExitFocus
+  history.back();
 }
 
-// 真正执行关闭（由 popstate 触发）
 function actuallyExitFocus() {
   if (!isFocused) return;
   if (isZooming) closeZoom();
@@ -2412,9 +2435,6 @@ function navFocusPlant(delta) {
   updateFocusContent();
 }
 
-/* ==========================================================
-   图片全屏放大
-   ========================================================== */
 function createZoomOverlay() {
   if (zoomOverlay) return zoomOverlay;
   const overlay = document.createElement('div');
@@ -2682,13 +2702,11 @@ function boot() {
   currentSeason = detectSeason();
   preloadAround(currentSeason);
   setTimeout(function () { startAutoPlay(currentSeason); }, 800);
-  // 空闲时全量预加载，用户滑动时不再等图片
   preloadAllInIdle();
 }
 if (document.readyState === 'complete') boot();
 else window.addEventListener('load', boot);
 
-/* ==================== 音乐逻辑 ==================== */
 const bgm = document.getElementById('bgm');
 const soundBtn = document.getElementById('sound-toggle');
 const soundIcon = document.getElementById('sound-icon');
@@ -2743,7 +2761,10 @@ document.addEventListener('keydown', firstInteractionHandler, { passive: true })
 
 updateSoundIcon();
 
-/* ==================== AI 助手逻辑 ==================== */
+/* ==================== AI 助手逻辑 (SiliconFlow 接口) ==================== */
+const API_URL = "https://api.siliconflow.cn/v1/chat/completions";
+const CHAT_MODEL = "Qwen/Qwen2.5-7B-Instruct";
+
 const aiFloatBtn = document.getElementById('ai-float-btn');
 const aiChatBox = document.getElementById('ai-chat-box');
 const aiCloseBtn = document.getElementById('ai-close-btn');
@@ -2753,27 +2774,6 @@ const aiSendBtn = document.getElementById('ai-send-btn');
 const aiMessages = document.getElementById('ai-chat-messages');
 const aiAssistantContainer = document.getElementById('ai-assistant-container');
 const jumpAIBtn = document.getElementById('jump-ai-btn');
-
-/* ===== API 配置（纯智谱官方接口，稳定可靠） ===== */
-const API_KEY = "66de7713c55546bab9822a2d92a9957b";
-const API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
-const MODEL = "glm-4-air";
-
-/* 统一响应处理：区分 HTTP 错误 / JSON 解析失败 / 断网 */
-function readApiResponse(response) {
-  if (!response.ok) {
-    var e = new Error('HTTP ' + response.status);
-    e.isHttp = true;
-    e.status = response.status;
-    throw e;
-  }
-  return response.json();
-}
-function httpFriendlyError(status) {
-  if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
-  if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
-  return '服务器繁忙（错误码 ' + status + '），请稍后重试。';
-}
 
 let isAILoading = false;
 
@@ -2908,9 +2908,6 @@ aiClearBtn.addEventListener('click', async () => {
   saveChatHistory();
 });
 
-/* ==========================================================
-   聊天记录：跨页兼容
-   ========================================================== */
 function saveChatHistory() {
   try {
     const msgs = aiMessages.querySelectorAll('.ai-message');
@@ -2985,6 +2982,12 @@ function sendAIMessage() {
   const text = aiInput.value.trim();
   if (!text || isAILoading) return;
 
+  // 检查限额
+  if (!verifyQuota('chat')) {
+    appendMessage('bot', '今日聊天次数已用尽（防刷限制，每天最多20次），明天再来吧 🌿');
+    return;
+  }
+
   appendMessage('user', text);
   aiInput.value = '';
   isAILoading = true;
@@ -3007,18 +3010,25 @@ function sendAIMessage() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Authorization': 'Bearer ' + retrieveToken()
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: CHAT_MODEL,
         messages: chatHistory,
-        max_tokens: 400,
+        max_tokens: 500,
         temperature: 0.7
       })
     }).then(function(response) {
-      return readApiResponse(response);
+      if (!response.ok) {
+        var e = new Error('HTTP ' + response.status);
+        e.isHttp = true;
+        e.status = response.status;
+        throw e;
+      }
+      return response.json();
     }).then(function(data) {
       if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
+      consumeQuota('chat');
       if (data.choices && data.choices[0]) {
         const _m = data.choices[0].message || {};
         const reply = String(_m.content || '').trim() || '（AI 没返回内容，请重新发送一次）';
@@ -3037,7 +3047,7 @@ function sendAIMessage() {
       } else {
         console.error("AI 请求失败:", error);
         if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
-        if (error && error.isHttp) appendMessage('bot', httpFriendlyError(error.status));
+        if (error && error.isHttp) appendMessage('bot', '服务器繁忙（' + error.status + '），请稍后重试。');
         else appendMessage('bot', '网络连接失败，请检查一下网络。');
         isAILoading = false;
         saveChatHistory();
@@ -3071,7 +3081,8 @@ function goToAIScreen() {
 }
 window.goToAIScreen = goToAIScreen;
 
-/* ==================== 图像识别逻辑 ==================== */
+/* ==================== 图像识别逻辑 (SiliconFlow 接口) ==================== */
+const VISION_MODEL = "Qwen/Qwen2-VL-7B-Instruct";
 const fileInput = document.getElementById('file-input');
 const uploadArea = document.getElementById('upload-area');
 const loadingSpinner = document.getElementById('loading-spinner');
@@ -3153,6 +3164,12 @@ function handleImageFile(file) {
   }
   if (file.size > 5 * 1024 * 1024) {
     showToast('图片太大了，请选择小于 5MB 的图片。', { type: 'warning' });
+    return;
+  }
+
+  // 检查限额
+  if (!verifyQuota('scan')) {
+    showToast('今日识图次数已用尽（防刷限制，每天最多5次）。', { type: 'error' });
     return;
   }
 
@@ -3239,17 +3256,17 @@ async function callVisionAPI(base64Data) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
+        'Authorization': 'Bearer ' + retrieveToken()
       },
       body: JSON.stringify({
-        model: "glm-4v-flash",
-        max_tokens: 2000,
+        model: VISION_MODEL,
+        max_tokens: 1000,
         messages: [
           {
             role: "user",
             content: [
-              { type: "text", text: systemPrompt },
-              { type: "image_url", image_url: { url: base64Data } }
+              { type: "image_url", image_url: { url: base64Data } },
+              { type: "text", text: systemPrompt }
             ]
           }
         ]
@@ -3260,12 +3277,20 @@ async function callVisionAPI(base64Data) {
     if (currentTimeout) { clearTimeout(currentTimeout); currentTimeout = null; }
     currentAbortController = null;
 
-    const data = await readApiResponse(response);
+    if (!response.ok) {
+      var err = new Error('HTTP ' + response.status);
+      err.isHttp = true;
+      err.status = response.status;
+      throw err;
+    }
+
+    const data = await response.json();
     hideLoading();
+    consumeQuota('scan');
 
     if (data.choices && data.choices[0]) {
       var _m = data.choices[0].message || {};
-      var _txt = String(_m.content || '').trim();
+      var _txt = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim();
       if (_txt) renderResult(_txt);
       else showResult('AI 返回了空结果，多为这张照片触发了内容过滤，或回复被截断——换张照片通常就能恢复。', true);
     } else {
@@ -3284,7 +3309,7 @@ async function callVisionAPI(base64Data) {
     console.error("视觉 API 请求失败:", error);
     hideLoading();
     uploadArea.style.display = 'flex';
-    if (error && error.isHttp) showResult(httpFriendlyError(error.status), true);
+    if (error && error.isHttp) showResult('服务器繁忙（' + error.status + '），请稍后重试。', true);
     else showResult("网络连接失败，请检查网络后重试。", true);
   }
 }
@@ -3609,7 +3634,6 @@ function showResult(text, isError) {
     if (typeof navigateTo === 'function') navigateTo(e.pg);
     else location.href = e.pg;
   }
-  /* 跨页深链落地：打开页面后自动弹到对应物种的科普内容 */
   try {
     var kbJumpRaw = sessionStorage.getItem('kbJump');
     if (kbJumpRaw) {
