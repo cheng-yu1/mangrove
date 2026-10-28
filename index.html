@@ -1915,7 +1915,6 @@
 (function () {
     'use strict';
 
-    // 1. 域名锁与环境检查
     var loc = window.location;
     if (loc.protocol === 'file:') {
         document.documentElement.innerHTML =
@@ -1924,13 +1923,11 @@
           'align-items:center;justify-content:center;height:100vh;font-family:sans-serif;' +
           'font-size:16px;letter-spacing:.1em;text-align:center;line-height:2;padding:20px;">' +
           '<div style="font-size:24px;color:#82e6b4;margin-bottom:20px;">⚠️ 检测到直接双击打开</div>' +
-          '<div>浏览器安全策略（CORS）会拦截 AI 接口请求。<br>' +
-          '请使用 <b>VS Code 的 Live Server</b> 插件，或部署到 <b>GitHub Pages</b> / <b>Vercel</b> 后访问。</div></body>';
+          '<div>浏览器安全策略（CORS）会拦截 AI 接口请求，导致“API 密钥无效”等报错。<br>' +
+          '请使用 <b>VS Code 的 Live Server</b> 插件打开，或直接部署到 <b>GitHub Pages</b> 后访问。</div></body>';
         return;
     }
-    // 如果你想让某些特定域名才能用，可以在这里加白名单，目前为了防止误伤，只拦截纯本地文件。
 
-    // 2. 反爬特征检测
     var ua = navigator.userAgent || '';
     var botRe = /(bot|crawler|spider|scrapy|puppeteer|playwright|selenium|phantomjs|headlesschrome|python-requests|curl\/|wget\/|httpclient)/i;
     var isBot = navigator.webdriver === true || botRe.test(ua);
@@ -1948,7 +1945,6 @@
         return;
     }
 
-    // 3. 基础防调试
     document.addEventListener('contextmenu', function (e) { e.preventDefault(); }, false);
     document.addEventListener('keydown', function (e) {
         var k = (e.key || '').toLowerCase();
@@ -1986,7 +1982,7 @@
        1. API 配置与防爬限制
        ========================================================== */
     
-    // 【暴力打乱】把密钥拆成三段，并加入混淆用的假变量
+    // 障眼法：把密钥拆分，加假变量
     var _p1 = "sk-rzfnpnsadyu";
     var _p2 = "ikhaunmquugxxm";
     var _p3 = "okiwfsvjulirbgkinqlmtnu";
@@ -1995,13 +1991,12 @@
     function retrieveToken() {
         var _check = "valid";
         if (_check === "valid") {
-            // 运行时拼合
             return _p1 + _p2 + _p3;
         }
         return _fakeDecoy;
     }
 
-    // 【本地限额】防止恶意刷量
+    // 限额
     function verifyQuota(action) {
         try {
             var d = new Date().toISOString().split('T')[0];
@@ -2009,7 +2004,7 @@
             if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
             
             if (action === 'chat' && q.chat >= 20) return false;
-            if (action === 'scan' && q.scan >= 5) return false; // 每天5次识图
+            if (action === 'scan' && q.scan >= 5) return false;
             
             return true;
         } catch(e) { return true; }
@@ -2029,14 +2024,13 @@
         urls: [
             'https://api.siliconflow.cn/v1/chat/completions'
         ],
-        // 识图备用模型链：主用 7B，不行切 72B，再不行切 2.5
+        // 改用目前最稳定、支持最好的两个视觉模型
         scanModels: [
             'Qwen/Qwen2-VL-7B-Instruct', 
-            'Qwen/Qwen2-VL-72B-Instruct',
-            'Qwen/Qwen2.5-VL-7B-Instruct'
+            'deepseek-ai/deepseek-vl2'
         ],
         chatModels: ['Qwen/Qwen2.5-7B-Instruct', 'Qwen/Qwen2-7B-Instruct'],
-        scanTimeout: 90000, // 识图超时时间延长至 90 秒
+        scanTimeout: 90000,
         chatTimeout: 45000,
         maxTokensScan: 1024,
         maxTokensChat: 500
@@ -2111,8 +2105,8 @@
             return doFetch().catch(function(err) {
                 var status = err && err.status;
 
-                if (status === 401 || status === 403) throw err;
-                if (status === 400 || status === 404) return nextModel();
+                if (status === 401 || status === 403) throw err; // 密钥错误或权限不足，直接抛出，换模型也没用
+                if (status === 400 || status === 404) return nextModel(); // 模型不对，换模型
 
                 if (status === 429) {
                     if (retried429 >= 1) return nextModel();
@@ -2130,14 +2124,22 @@
 
     function friendlyError(err) {
         if (!err) return '网络异常，请稍后重试';
+        // 如果服务器具体返回了报错信息，直接展示给用户看！
+        if (err.body) {
+            try {
+                var parsed = JSON.parse(err.body);
+                if (parsed.message) return 'API返回错误：' + parsed.message;
+                if (parsed.error && parsed.error.message) return 'API返回错误：' + parsed.error.message;
+            } catch(e) {}
+        }
         if (err.status === 402) return '账户余额不足，请前往硅基流动充值。';
-        if (err.status === 401 || err.status === 403) return 'API 密钥无效或已被禁用';
+        if (err.status === 401) return 'API 密钥无效，请检查密钥配置。';
+        if (err.status === 403) return '当前模型不可用或未授权，请检查账户余额或权限。';
+        if (err.status === 404) return 'API 接口不存在。';
         if (err.status === 429) return '请求太频繁，请等几秒再试';
-        if (err.status === 400 || err.status === 404) return '模型暂不可用，请稍后重试';
-        if (err.status) return '服务器繁忙（' + err.status + '），请稍后重试';
         if (err.name === 'AbortError' || err.message === 'ALL_FAILED') return '请求超时或模型无响应，请稍后重试';
-        if (err.name === 'TypeError') return '网络连接失败，请检查网络或跨域设置';
-        return '网络异常，请检查网络后重试';
+        if (err.name === 'TypeError') return '网络连接失败，请检查网络（不要直接双击打开 HTML，请用 Live Server 或部署到 GitHub）。';
+        return '网络异常，请稍后重试';
     }
 
     /* ==========================================================
@@ -2681,7 +2683,6 @@
         if (file.size > 5 * 1024 * 1024) { alert('图片太大了，请选择小于 5MB 的图片。'); return; }
         if (scanBusy) { alert('上一次识别还没完成，请稍等。'); return; }
         
-        // 本地限额检查
         if (!verifyQuota('scan')) {
             showScanResult('今日识图次数已用尽（防刷限制，每天最多5次）。', true);
             return;
@@ -2695,7 +2696,6 @@
 
         var reader = new FileReader();
         reader.onload = function(event) {
-            // 压缩图片，保持较高清晰度（宽 800px，质量 0.8）
             compressImage(event.target.result, 800, 0.8).then(function(compressed) {
                 return callAPI({
                     models: API_CONFIG.scanModels,
@@ -2712,7 +2712,7 @@
                 });
             }).then(function(data) {
                 resetScanUI();
-                consumeQuota('scan'); // 消耗配额
+                consumeQuota('scan');
                 var txt = '';
                 if (data && data.choices && data.choices[0] && data.choices[0].message) {
                     var m = data.choices[0].message;
@@ -2745,7 +2745,6 @@
                     c.width = w; c.height = h;
                     var cx = c.getContext('2d');
                     cx.drawImage(img, 0, 0, w, h);
-                    // 确保输出为 jpeg 格式
                     var out = c.toDataURL('image/jpeg', quality);
                     var q = quality;
                     while (out.length > 500000 && q > 0.5) {
@@ -3050,7 +3049,7 @@
             timeout: API_CONFIG.chatTimeout
         }).then(function(data) {
             if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
-            consumeQuota('chat'); // 消耗配额
+            consumeQuota('chat');
             var reply = '';
             if (data && data.choices && data.choices[0] && data.choices[0].message) {
                 var m = data.choices[0].message;
@@ -3077,7 +3076,6 @@
         var text = aiInput.value.trim();
         if (!text || isAILoading) return;
 
-        // 本地限额检查
         if (!verifyQuota('chat')) {
             appendMessage('bot', '今日聊天次数已用尽（防刷限制，每天最多20次），明天再来吧 🌿');
             return;
