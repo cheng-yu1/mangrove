@@ -1724,6 +1724,120 @@ function consumeQuota(action) {
 }
 
 /* ==========================================================
+   3. 统一 API 请求核心（带模型回退）
+   ========================================================== */
+var API_CONFIG = {
+  urls: ['https://api.siliconflow.cn/v1/chat/completions'],
+  scanModels: ['Qwen/Qwen2-VL-7B-Instruct', 'Qwen/Qwen2-VL-72B-Instruct', 'deepseek-ai/deepseek-vl2'],
+  chatModels: ['Qwen/Qwen2.5-7B-Instruct', 'Qwen/Qwen2-7B-Instruct'],
+  scanTimeout: 90000,
+  chatTimeout: 45000,
+  maxTokensScan: 1000,
+  maxTokensChat: 500
+};
+
+function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+function authHeaders() {
+  return {
+    'Content-Type': 'application/json',
+    'Authorization': 'Bearer ' + retrieveToken()
+  };
+}
+
+function callAPI(opts) {
+  var modelList = (opts.models && opts.models.length) ? opts.models.slice() : [''];
+  var mi = 0, ei = 0, retried429 = 0;
+
+  function nextModel() {
+    mi++;
+    ei = 0;
+    if (mi >= modelList.length) {
+      var e = new Error('ALL_FAILED');
+      e.allFailed = true;
+      return Promise.reject(e);
+    }
+    return attempt();
+  }
+
+  function doFetch() {
+    var url = API_CONFIG.urls[ei];
+    var controller = new AbortController();
+    var timer = setTimeout(function() {
+      try { controller.abort(); } catch (e) {}
+    }, opts.timeout || 45000);
+
+    var body = {
+      model: modelList[mi],
+      messages: opts.messages,
+      max_tokens: opts.max_tokens || 500,
+      temperature: (opts.temperature != null) ? opts.temperature : 0.7,
+      stream: false
+    };
+
+    return fetch(url, {
+      method: 'POST',
+      headers: authHeaders(),
+      body: JSON.stringify(body),
+      signal: controller.signal,
+      mode: 'cors',
+      credentials: 'omit'
+    }).then(function(res) {
+      clearTimeout(timer);
+      if (!res.ok) {
+        var e = new Error('HTTP ' + res.status);
+        e.status = res.status;
+        e.isHttp = true;
+        return res.text().then(function(t) {
+          try { e.body = t.slice(0, 300); } catch (x) {}
+          throw e;
+        }, function() { throw e; });
+      }
+      return res.json();
+    }, function(err) {
+      clearTimeout(timer);
+      throw err;
+    });
+  }
+
+  function attempt() {
+    if (ei >= API_CONFIG.urls.length) return nextModel();
+    return doFetch().catch(function(err) {
+      var status = err && err.status;
+      if (status === 401 || status === 403) throw err;
+      if (status === 400 || status === 404) return nextModel();
+      if (status === 429) {
+        if (retried429 >= 1) return nextModel();
+        retried429++;
+        return sleep(3000).then(attempt);
+      }
+      ei++;
+      return attempt();
+    });
+  }
+  return attempt();
+}
+
+function friendlyError(err) {
+  if (!err) return '网络异常，请稍后重试';
+  if (err.body) {
+    try {
+      var parsed = JSON.parse(err.body);
+      if (parsed.message) return 'API返回错误：' + parsed.message;
+      if (parsed.error && parsed.error.message) return 'API返回错误：' + parsed.error.message;
+    } catch(e) {}
+  }
+  if (err.status === 402) return '账户余额不足，请前往硅基流动充值。';
+  if (err.status === 401) return 'API 密钥无效，请检查密钥配置。';
+  if (err.status === 403) return '当前模型不可用或未授权，请检查账户余额或权限。';
+  if (err.status === 404) return 'API 接口不存在。';
+  if (err.status === 429) return '请求太频繁，请等几秒再试';
+  if (err.name === 'AbortError' || err.message === 'ALL_FAILED') return '请求超时或模型无响应，请稍后重试';
+  if (err.name === 'TypeError') return '网络连接失败，请检查网络（不要直接双击打开 HTML，请用 Live Server 或部署到 GitHub）。';
+  return '网络异常，请稍后重试';
+}
+
+/* ==========================================================
    SVG 图标常量
    ========================================================== */
 const ICONS = {
@@ -2761,10 +2875,7 @@ document.addEventListener('keydown', firstInteractionHandler, { passive: true })
 
 updateSoundIcon();
 
-/* ==================== AI 助手逻辑 (SiliconFlow 接口) ==================== */
-const API_URL = "https://api.siliconflow.cn/v1/chat/completions";
-const CHAT_MODEL = "Qwen/Qwen2.5-7B-Instruct";
-
+/* ==================== AI 助手逻辑 (统一走 callAPI) ==================== */
 const aiFloatBtn = document.getElementById('ai-float-btn');
 const aiChatBox = document.getElementById('ai-chat-box');
 const aiCloseBtn = document.getElementById('ai-close-btn');
@@ -2982,7 +3093,6 @@ function sendAIMessage() {
   const text = aiInput.value.trim();
   if (!text || isAILoading) return;
 
-  // 检查限额
   if (!verifyQuota('chat')) {
     appendMessage('bot', '今日聊天次数已用尽（防刷限制，每天最多20次），明天再来吧 🌿');
     return;
@@ -3005,57 +3115,34 @@ function sendAIMessage() {
   aiMessages.appendChild(loadingDiv);
   aiMessages.scrollTop = aiMessages.scrollHeight;
 
-  function doFetch(attempt) {
-    fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + retrieveToken()
-      },
-      body: JSON.stringify({
-        model: CHAT_MODEL,
-        messages: chatHistory,
-        max_tokens: 500,
-        temperature: 0.7
-      })
-    }).then(function(response) {
-      if (!response.ok) {
-        var e = new Error('HTTP ' + response.status);
-        e.isHttp = true;
-        e.status = response.status;
-        throw e;
-      }
-      return response.json();
-    }).then(function(data) {
-      if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
-      consumeQuota('chat');
-      if (data.choices && data.choices[0]) {
-        const _m = data.choices[0].message || {};
-        const reply = String(_m.content || '').trim() || '（AI 没返回内容，请重新发送一次）';
-        appendMessage('bot', reply);
-        chatHistory.push({ role: "assistant", content: reply });
-      } else {
-        appendMessage('bot', '抱歉，AI 返回数据异常，请重试。');
-      }
-      isAILoading = false;
-      saveChatHistory();
-    }).catch(function(error) {
-      if (attempt < 2) {
-        setTimeout(function() {
-          doFetch(attempt + 1);
-        }, 1500);
-      } else {
-        console.error("AI 请求失败:", error);
-        if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
-        if (error && error.isHttp) appendMessage('bot', '服务器繁忙（' + error.status + '），请稍后重试。');
-        else appendMessage('bot', '网络连接失败，请检查一下网络。');
-        isAILoading = false;
-        saveChatHistory();
-      }
-    });
-  }
-
-  doFetch(0);
+  callAPI({
+    models: API_CONFIG.chatModels,
+    messages: chatHistory,
+    max_tokens: API_CONFIG.maxTokensChat,
+    temperature: 0.7,
+    timeout: API_CONFIG.chatTimeout
+  }).then(function(data) {
+    if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
+    consumeQuota('chat');
+    var reply = '';
+    if (data && data.choices && data.choices[0] && data.choices[0].message) {
+      var m = data.choices[0].message;
+      reply = String(m.content || '').trim() || String(m.reasoning_content || '').trim();
+    }
+    if (reply) {
+      appendMessage('bot', reply);
+      chatHistory.push({ role: "assistant", content: reply });
+    } else {
+      appendMessage('bot', '抱歉，AI 返回数据异常，请重试。');
+    }
+    isAILoading = false;
+    saveChatHistory();
+  }).catch(function(err) {
+    if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
+    appendMessage('bot', friendlyError(err) + ' 🌿');
+    isAILoading = false;
+    saveChatHistory();
+  });
 }
 
 function appendMessage(role, text) {
@@ -3081,8 +3168,7 @@ function goToAIScreen() {
 }
 window.goToAIScreen = goToAIScreen;
 
-/* ==================== 图像识别逻辑 (SiliconFlow 接口) ==================== */
-const VISION_MODEL = "Qwen/Qwen2-VL-7B-Instruct";
+/* ==================== 图像识别逻辑 (统一走 callAPI) ==================== */
 const fileInput = document.getElementById('file-input');
 const uploadArea = document.getElementById('upload-area');
 const loadingSpinner = document.getElementById('loading-spinner');
@@ -3167,7 +3253,6 @@ function handleImageFile(file) {
     return;
   }
 
-  // 检查限额
   if (!verifyQuota('scan')) {
     showToast('今日识图次数已用尽（防刷限制，每天最多5次）。', { type: 'error' });
     return;
@@ -3249,46 +3334,30 @@ async function callVisionAPI(base64Data) {
     hideLoading();
     uploadArea.style.display = 'flex';
     showResult("识别超时了，可能是因为网络较慢。请换一张图片或稍后重试。", true);
-  }, 60000);
+  }, 90000);
 
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + retrieveToken()
-      },
-      body: JSON.stringify({
-        model: VISION_MODEL,
-        max_tokens: 1000,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "image_url", image_url: { url: base64Data } },
-              { type: "text", text: systemPrompt }
-            ]
-          }
+    const data = await callAPI({
+      models: API_CONFIG.scanModels,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image_url', image_url: { url: base64Data } },
+          { type: 'text', text: systemPrompt }
         ]
-      }),
-      signal: currentAbortController.signal
+      }],
+      temperature: 0.1,
+      max_tokens: API_CONFIG.maxTokensScan,
+      timeout: API_CONFIG.scanTimeout
     });
 
     if (currentTimeout) { clearTimeout(currentTimeout); currentTimeout = null; }
     currentAbortController = null;
-
-    if (!response.ok) {
-      var err = new Error('HTTP ' + response.status);
-      err.isHttp = true;
-      err.status = response.status;
-      throw err;
-    }
-
-    const data = await response.json();
+    
     hideLoading();
     consumeQuota('scan');
 
-    if (data.choices && data.choices[0]) {
+    if (data && data.choices && data.choices[0]) {
       var _m = data.choices[0].message || {};
       var _txt = String(_m.content || '').trim() || String(_m.reasoning_content || '').trim();
       if (_txt) renderResult(_txt);
@@ -3309,7 +3378,7 @@ async function callVisionAPI(base64Data) {
     console.error("视觉 API 请求失败:", error);
     hideLoading();
     uploadArea.style.display = 'flex';
-    if (error && error.isHttp) showResult('服务器繁忙（' + error.status + '），请稍后重试。', true);
+    if (error && error.isHttp) showResult(friendlyError(error), true);
     else showResult("网络连接失败，请检查网络后重试。", true);
   }
 }
