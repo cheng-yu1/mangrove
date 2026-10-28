@@ -1915,7 +1915,6 @@
 (function () {
     'use strict';
 
-    // 拦截 file:// 协议，防止跨域导致的各种报错
     if (window.location.protocol === 'file:') {
         document.documentElement.innerHTML =
           '<head><meta charset="utf-8"><title>环境错误</title></head>' +
@@ -1981,7 +1980,6 @@
     /* ==========================================================
        1. API 配置与防爬限制
        ========================================================== */
-    // 障眼法：将密钥拆分为3段，直接写在不同的假变量里
     var _secA = "sk-rzfnpnsadyuikhaunm";
     var _secB = "quugxxmokiwfsvjulir";
     var _secC = "bgkinqlmtnu";
@@ -1990,10 +1988,9 @@
         if (_fakeCheck === "something_random") {
             return _secA + _secB + _secC;
         }
-        return "invalid_key"; // 永远走不到这里
+        return "invalid_key";
     }
 
-    // 本地限流器：每个浏览器每天最多 20句聊天、5次识图
     function checkQuota(type) {
         try {
             var today = new Date().toISOString().split('T')[0];
@@ -2019,7 +2016,6 @@
         urls: [
             'https://api.siliconflow.cn/v1/chat/completions'
         ],
-        // 使用更聪明的 VL 模型
         scanModels: ['Qwen/Qwen2-VL-7B-Instruct', 'Qwen/Qwen2.5-VL-7B-Instruct'],
         chatModels: ['Qwen/Qwen2.5-7B-Instruct', 'Qwen/Qwen2-7B-Instruct'],
         scanTimeout: 60000,
@@ -2287,6 +2283,10 @@
     skipBtn.addEventListener('click', function(e) {
         e.stopPropagation();
         clearSceneTimer();
+        // 强制移除所有字幕，让画面干干净净
+        for (var i = 0; i < lines.length; i++) {
+            lines[i].classList.remove('active');
+        }
         finishCinema();
     });
 
@@ -2308,9 +2308,16 @@
         clearSceneTimer();
         setCinemaState(STATE.DONE);
         scrollCue.classList.add('show');
-        endCredit.classList.add('show');
-        // 补全所有字幕
-        for (var i = 0; i < lines.length; i++) lines[i].classList.add('active');
+        
+        // 如果是自然播放完，为了保证画面干净，也把所有字幕隐藏
+        for (var i = 0; i < lines.length; i++) {
+            lines[i].classList.remove('active');
+        }
+        
+        // 延迟一点显示片尾字幕
+        setTimeout(function() {
+            endCredit.classList.add('show');
+        }, 300);
     }
     
     function pauseCinema() { clearSceneTimer(); setCinemaState(STATE.PAUSED); }
@@ -2658,7 +2665,6 @@
         if (file.size > 5 * 1024 * 1024) { alert('图片太大了，请选择小于 5MB 的图片。'); return; }
         if (scanBusy) { alert('上一次识别还没完成，请稍等。'); return; }
         
-        // 检查本地识图限额（每天5次）
         if (!checkQuota('scan')) {
             showScanResult('今日识图次数已用尽（防刷限制）。', true);
             return;
@@ -2688,7 +2694,7 @@
                 });
             }).then(function(data) {
                 resetScanUI();
-                addQuota('scan'); // 成功则计次
+                addQuota('scan');
                 var txt = '';
                 if (data && data.choices && data.choices[0] && data.choices[0].message) {
                     var m = data.choices[0].message;
@@ -3025,7 +3031,7 @@
             timeout: API_CONFIG.chatTimeout
         }).then(function(data) {
             if (loadingDiv.parentNode) aiMessages.removeChild(loadingDiv);
-            addQuota('chat'); // 成功计次
+            addQuota('chat');
             var reply = '';
             if (data && data.choices && data.choices[0] && data.choices[0].message) {
                 var m = data.choices[0].message;
@@ -3052,7 +3058,6 @@
         var text = aiInput.value.trim();
         if (!text || isAILoading) return;
 
-        // 检查本地聊天限额（每天20次）
         if (!checkQuota('chat')) {
             appendMessage('bot', '今日聊天次数已用尽（防刷限制），明天再来吧 🌿');
             return;
