@@ -692,7 +692,7 @@
     color:var(--ink-soft);
   }
 
-  /* ==================== AI 悬浮助手（白鸟造型） ==================== */
+  /* ==================== AI 悬浮助手 ==================== */
   .ai-assistant-container {
     position: fixed;
     bottom: 100px;
@@ -707,409 +707,94 @@
     touch-action: none;
     pointer-events: none;
   }
-  .ai-action-row,
-  .ai-sprite-box,
-  .ai-sprite-btn,
-  .ai-text-btn,
-  .ai-label,
-  .ai-chat-box {
-    pointer-events: auto;
-  }
-
-  .ai-action-row {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-  }
-
-  .ai-sprite-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-  }
-
+  .ai-action-row, .ai-sprite-box, .ai-sprite-btn, .ai-text-btn, .ai-label, .ai-chat-box { pointer-events: auto; }
+  .ai-action-row { display: flex; align-items: center; gap: 12px; }
+  .ai-sprite-box { display: flex; flex-direction: column; align-items: center; gap: 8px; }
   .ai-text-btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 11px 22px;
-    border-radius: 50px;
-    background: #ffffff;
-    border: 1px solid rgba(63,102,83,0.18);
-    color: var(--green-deep);
-    font-size: 13px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    cursor: pointer;
-    white-space: nowrap;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 11px 22px; border-radius: 50px; background: #ffffff;
+    border: 1px solid rgba(63,102,83,0.18); color: var(--green-deep);
+    font-size: 13px; font-weight: 700; letter-spacing: 0.12em; cursor: pointer; white-space: nowrap;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateX(20px);
-    pointer-events: none;
+    opacity: 0; visibility: hidden; transform: translateX(20px); pointer-events: none;
     box-shadow: 0 6px 22px rgba(63,102,83,0.18), 0 2px 6px rgba(63,102,83,0.08);
-    font-family: inherit;
-    text-indent: 0.12em;
+    font-family: inherit; text-indent: 0.12em;
   }
-  .ai-text-btn.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateX(0);
-    pointer-events: auto;
-  }
-  .ai-text-btn:hover {
-    background: #ffffff;
-    box-shadow: 0 10px 30px rgba(63,102,83,0.28), 0 3px 10px rgba(63,102,83,0.12);
-    transform: translateY(-2px);
-    border-color: rgba(63,102,83,0.35);
-  }
+  .ai-text-btn.show { opacity: 1; visibility: visible; transform: translateX(0); pointer-events: auto; }
+  .ai-text-btn:hover { background: #ffffff; box-shadow: 0 10px 30px rgba(63,102,83,0.28), 0 3px 10px rgba(63,102,83,0.12); transform: translateY(-2px); border-color: rgba(63,102,83,0.35); }
 
-  /* 白色鸟类精灵按钮 */
   .ai-sprite-btn {
-    position: relative;
-    width: 74px;
-    height: 74px;
-    border-radius: 50%;
+    position: relative; width: 74px; height: 74px; border-radius: 50%;
     background: radial-gradient(circle at 35% 30%, #ffffff, #f2f2f2, #dcdcdc);
     border: 2px solid rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 25px rgba(200, 200, 200, 0.3), inset 0 0 15px rgba(255, 255, 255, 0.8);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    overflow: visible;
-    padding: 0;
-    outline: none !important;
-    font-family: inherit;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); overflow: visible; padding: 0; outline: none !important; font-family: inherit;
   }
-  .ai-sprite-btn:hover {
-    transform: scale(1.1) translateY(-5px);
-    box-shadow: 0 0 40px rgba(255, 255, 255, 0.9), inset 0 0 25px rgba(255, 255, 255, 1);
-  }
+  .ai-sprite-btn:hover { transform: scale(1.1) translateY(-5px); box-shadow: 0 0 40px rgba(255, 255, 255, 0.9), inset 0 0 25px rgba(255, 255, 255, 1); }
 
-  /* 呆毛 */
-  .sprite-ahoge {
-    position: absolute;
-    top: -18px;
-    left: 50%;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    border: 3px solid #d0d0d0;
-    border-bottom-color: transparent;
-    border-right-color: transparent;
-    transform: translateX(-50%) rotate(-45deg);
-    z-index: 1;
-    transition: transform 0.3s ease;
-    box-shadow: -1px -1px 3px rgba(0,0,0,0.05);
-  }
-
-  /* 鸟嘴 */
-  .sprite-beak {
-    position: absolute;
-    top: 58%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 18px;
-    height: 14px;
-    z-index: 4;
-    filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15));
-  }
-  .beak-top {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 65%;
-    background: linear-gradient(180deg, #ffe082 0%, #ffb300 100%);
-    border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-    clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
-  }
-  .beak-bottom {
-    position: absolute;
-    bottom: 0;
-    left: 15%;
-    width: 70%;
-    height: 35%;
-    background: linear-gradient(180deg, #ffb300 0%, #f57f17 100%);
-    border-radius: 0 0 50% 50% / 0 0 100% 100%;
-    clip-path: polygon(0% 0%, 100% 0%, 50% 100%);
-  }
-
-  /* 眼睛 */
-  .sprite-eyes {
-    display: flex;
-    gap: 12px;
-    z-index: 2;
-    margin-top: -6px;
-  }
-  .eye {
-    width: 16px; height: 16px;
-    background: transparent;
-    display: flex; align-items: center; justify-content: center;
-    overflow: hidden;
-  }
-  .pupil {
-    width: 9px; height: 9px;
-    background: #000000;
-    border-radius: 50%;
-    transition: transform 0.1s ease-out;
-  }
-
+  .sprite-ahoge { position: absolute; top: -18px; left: 50%; width: 24px; height: 24px; border-radius: 50%; border: 3px solid #d0d0d0; border-bottom-color: transparent; border-right-color: transparent; transform: translateX(-50%) rotate(-45deg); z-index: 1; transition: transform 0.3s ease; box-shadow: -1px -1px 3px rgba(0,0,0,0.05); }
+  .sprite-beak { position: absolute; top: 58%; left: 50%; transform: translate(-50%, -50%); width: 18px; height: 14px; z-index: 4; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.15)); }
+  .beak-top { position: absolute; top: 0; left: 0; width: 100%; height: 65%; background: linear-gradient(180deg, #ffe082 0%, #ffb300 100%); border-radius: 50% 50% 0 0 / 100% 100% 0 0; clip-path: polygon(0% 0%, 100% 0%, 50% 100%); }
+  .beak-bottom { position: absolute; bottom: 0; left: 15%; width: 70%; height: 35%; background: linear-gradient(180deg, #ffb300 0%, #f57f17 100%); border-radius: 0 0 50% 50% / 0 0 100% 100%; clip-path: polygon(0% 0%, 100% 0%, 50% 100%); }
+  .sprite-eyes { display: flex; gap: 12px; z-index: 2; margin-top: -6px; }
+  .eye { width: 16px; height: 16px; background: transparent; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+  .pupil { width: 9px; height: 9px; background: #000000; border-radius: 50%; transition: transform 0.1s ease-out; }
   .ai-sprite-btn.breathe { animation: spriteBreathe 0.6s ease-in-out; }
-  @keyframes spriteBreathe {
-    0% { transform: scale(1.1) translateY(-5px); }
-    50% { transform: scale(0.9) translateY(-5px); }
-    100% { transform: scale(1.1) translateY(-5px); }
-  }
+  @keyframes spriteBreathe { 0% { transform: scale(1.1) translateY(-5px); } 50% { transform: scale(0.9) translateY(-5px); } 100% { transform: scale(1.1) translateY(-5px); } }
 
-  .ai-label {
-    font-size: 11px;
-    color: var(--green-mid);
-    letter-spacing: 0.1em;
-    text-shadow: 0 2px 8px rgba(255, 255, 255, 0.8);
-    font-weight: 700;
-    transition: color 0.3s;
-    pointer-events: none;
-    text-align: center;
-    white-space: nowrap;
-  }
+  .ai-label { font-size: 11px; color: var(--green-mid); letter-spacing: 0.1em; text-shadow: 0 2px 8px rgba(255, 255, 255, 0.8); font-weight: 700; transition: color 0.3s; pointer-events: none; text-align: center; white-space: nowrap; }
 
-  .ai-chat-box, .ai-chat-box *, #ai-input, #ai-send-btn, .ai-close-btn, .ai-message {
-    cursor: auto !important;
-  }
+  .ai-chat-box, .ai-chat-box *, #ai-input, #ai-send-btn, .ai-close-btn, .ai-message { cursor: auto !important; }
   #ai-input { cursor: text !important; }
   #ai-send-btn, .ai-close-btn, .ai-clear-btn { cursor: pointer !important; }
 
   .ai-chat-box {
-    width: 340px;
-    height: 480px;
-    background: rgba(255, 255, 255, 0.96);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(46, 204, 113, 0.4);
-    border-radius: 20px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
+    width: 340px; height: 480px; background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(46, 204, 113, 0.4); border-radius: 20px;
+    display: flex; flex-direction: column; overflow: hidden;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2), 0 0 40px rgba(46, 204, 113, 0.1);
-    opacity: 0;
-    visibility: hidden;
-    transform: translateY(20px) scale(0.95);
-    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    transform-origin: bottom right;
-    pointer-events: none;
-    position: absolute;
-    bottom: calc(100% + 12px);
-    right: 0;
-    resize: both;
-    min-width: 280px;
-    min-height: 380px;
+    opacity: 0; visibility: hidden; transform: translateY(20px) scale(0.95);
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); transform-origin: bottom right;
+    pointer-events: none; position: absolute; bottom: calc(100% + 12px); right: 0;
+    resize: both; min-width: 280px; min-height: 380px;
   }
-  .ai-chat-box.show {
-    opacity: 1;
-    visibility: visible;
-    transform: translateY(0) scale(1);
-    pointer-events: auto;
-  }
+  .ai-chat-box.show { opacity: 1; visibility: visible; transform: translateY(0) scale(1); pointer-events: auto; }
 
-  .ai-chat-header {
-    padding: 16px 20px;
-    background: rgba(46, 204, 113, 0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 13px;
-    letter-spacing: 0.15em;
-    color: var(--green-deep);
-    border-bottom: 1px solid rgba(46, 204, 113, 0.2);
-    flex-shrink: 0;
-  }
-  .ai-close-btn {
-    background: none;
-    border: none;
-    color: var(--green-deep);
-    font-size: 20px;
-    opacity: 0.8;
-    transition: opacity 0.3s;
-    padding: 5px 10px;
-    z-index: 999;
-    position: relative;
-    font-family: inherit;
-  }
-  .ai-clear-btn {
-    background: none;
-    border: none;
-    color: rgba(27, 94, 32, 0.6);
-    font-size: 14px;
-    margin-right: 8px;
-    transition: color 0.3s;
-    font-family: inherit;
-    display: inline-flex;
-    align-items: center;
-  }
+  .ai-chat-header { padding: 16px 20px; background: rgba(46, 204, 113, 0.1); display: flex; justify-content: space-between; align-items: center; font-size: 13px; letter-spacing: 0.15em; color: var(--green-deep); border-bottom: 1px solid rgba(46, 204, 113, 0.2); flex-shrink: 0; }
+  .ai-close-btn { background: none; border: none; color: var(--green-deep); font-size: 20px; opacity: 0.8; transition: opacity 0.3s; padding: 5px 10px; z-index: 999; position: relative; font-family: inherit; }
+  .ai-clear-btn { background: none; border: none; color: rgba(27, 94, 32, 0.6); font-size: 14px; margin-right: 8px; transition: color 0.3s; font-family: inherit; display: inline-flex; align-items: center; }
   .ai-clear-btn svg { width: 14px; height: 14px; }
 
-  .ai-chat-messages {
-    flex: 1;
-    padding: 16px;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    scrollbar-width: thin;
-    -webkit-overflow-scrolling: touch;
-  }
-  .ai-message {
-    max-width: 85%;
-    padding: 10px 14px;
-    border-radius: 14px;
-    font-size: 13px;
-    line-height: 1.6;
-    letter-spacing: 0.05em;
-    word-break: break-word;
-  }
-  .ai-message-bot {
-    align-self: flex-start;
-    background: rgba(46, 204, 113, 0.1);
-    color: var(--green-deep);
-    border: 1px solid rgba(46, 204, 113, 0.2);
-    border-bottom-left-radius: 4px;
-  }
-  .ai-message-user {
-    align-self: flex-end;
-    background: rgba(27, 94, 32, 0.1);
-    color: var(--green-deep);
-    border: 1px solid rgba(27, 94, 32, 0.2);
-    border-bottom-right-radius: 4px;
-  }
-  .ai-message-loading {
-    align-self: flex-start;
-    color: #2ecc71;
-    font-size: 12px;
-    padding: 8px 14px;
-    background: rgba(46, 204, 113, 0.05);
-    border-radius: 14px;
-  }
+  .ai-chat-messages { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+  .ai-message { max-width: 85%; padding: 10px 14px; border-radius: 14px; font-size: 13px; line-height: 1.6; letter-spacing: 0.05em; word-break: break-word; }
+  .ai-message-bot { align-self: flex-start; background: rgba(46, 204, 113, 0.1); color: var(--green-deep); border: 1px solid rgba(46, 204, 113, 0.2); border-bottom-left-radius: 4px; }
+  .ai-message-user { align-self: flex-end; background: rgba(27, 94, 32, 0.1); color: var(--green-deep); border: 1px solid rgba(27, 94, 32, 0.2); border-bottom-right-radius: 4px; }
+  .ai-message-loading { align-self: flex-start; color: #2ecc71; font-size: 12px; padding: 8px 14px; background: rgba(46, 204, 113, 0.05); border-radius: 14px; }
 
-  .ai-chat-input-area {
-    padding: 12px;
-    display: flex;
-    gap: 8px;
-    border-top: 1px solid rgba(46, 204, 113, 0.15);
-    background: rgba(255, 255, 255, 0.5);
-    flex-shrink: 0;
-  }
-  #ai-input {
-    flex: 1;
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid rgba(46, 204, 113, 0.3);
-    border-radius: 30px;
-    padding: 10px 16px;
-    color: var(--green-deep);
-    font-size: 12px;
-    outline: none;
-    font-family: inherit;
-    transition: border 0.3s;
-    min-width: 0;
-  }
+  .ai-chat-input-area { padding: 12px; display: flex; gap: 8px; border-top: 1px solid rgba(46, 204, 113, 0.15); background: rgba(255, 255, 255, 0.5); flex-shrink: 0; }
+  #ai-input { flex: 1; background: rgba(255, 255, 255, 0.8); border: 1px solid rgba(46, 204, 113, 0.3); border-radius: 30px; padding: 10px 16px; color: var(--green-deep); font-size: 12px; outline: none; font-family: inherit; transition: border 0.3s; min-width: 0; }
   #ai-input:focus { border-color: #2ecc71; }
   #ai-input::placeholder { color: rgba(27, 94, 32, 0.4); }
 
-  #ai-send-btn {
-    padding: 0 18px;
-    background: rgba(46, 204, 113, 0.3);
-    border: 1px solid rgba(46, 204, 113, 0.6);
-    border-radius: 30px;
-    color: var(--green-deep);
-    font-size: 12px;
-    font-weight: 500;
-    transition: all 0.3s;
-    font-family: inherit;
-    flex-shrink: 0;
-    white-space: nowrap;
-  }
+  #ai-send-btn { padding: 0 18px; background: rgba(46, 204, 113, 0.3); border: 1px solid rgba(46, 204, 113, 0.6); border-radius: 30px; color: var(--green-deep); font-size: 12px; font-weight: 500; transition: all 0.3s; font-family: inherit; flex-shrink: 0; white-space: nowrap; }
 
-  .bottom-right-group {
-    position: fixed;
-    bottom: 5%;
-    right: 5%;
-    z-index: 10000;
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-  .icon-btn {
-    width: clamp(44px, 4vw, 56px);
-    height: clamp(44px, 4vw, 56px);
-    border-radius: 50%;
-    background: rgba(255,255,255,0.85);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(27,94,32,0.2);
-    color: var(--green-deep);
-    cursor: pointer;
-    display: flex; align-items: center; justify-content: center;
-    transition: all 0.5s ease;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-    font-family: inherit;
-  }
+  .bottom-right-group { position: fixed; bottom: 5%; right: 5%; z-index: 10000; display: flex; gap: 12px; align-items: center; }
+  .icon-btn { width: clamp(44px, 4vw, 56px); height: clamp(44px, 4vw, 56px); border-radius: 50%; background: rgba(255,255,255,0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(27,94,32,0.2); color: var(--green-deep); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.5s ease; box-shadow: 0 4px 15px rgba(0,0,0,0.1); font-family: inherit; }
   .icon-btn svg { width: 22px; height: 22px; }
 
-  .toast-container {
-    position: fixed;
-    top: 24px; left: 50%;
-    transform: translateX(-50%);
-    z-index: 100001;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    pointer-events: none;
-    max-width: calc(100vw - 40px);
-  }
-  .toast {
-    background: rgba(20, 36, 28, 0.96);
-    color: #e8f2ea;
-    border: 1px solid rgba(130, 230, 180, 0.35);
-    border-radius: 14px;
-    padding: 12px 22px;
-    font-size: 13.5px;
-    letter-spacing: 0.03em;
-    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
-    pointer-events: auto;
-    opacity: 0;
-    transform: translateY(-12px);
-    transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    max-width: 440px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
+  .toast-container { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); z-index: 100001; display: flex; flex-direction: column; gap: 10px; pointer-events: none; max-width: calc(100vw - 40px); }
+  .toast { background: rgba(20, 36, 28, 0.96); color: #e8f2ea; border: 1px solid rgba(130, 230, 180, 0.35); border-radius: 14px; padding: 12px 22px; font-size: 13.5px; letter-spacing: 0.03em; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25); pointer-events: auto; opacity: 0; transform: translateY(-12px); transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); max-width: 440px; display: flex; align-items: center; gap: 10px; }
   .toast.show { opacity: 1; transform: translateY(0); }
   .toast svg { flex-shrink: 0; width: 18px; height: 18px; }
   .toast.is-warning { border-color: rgba(255, 190, 110, 0.5); color: #ffe8c5; }
   .toast.is-error { border-color: rgba(255, 130, 130, 0.5); color: #ffd5d5; }
 
   .toast-confirm-wrap { display: flex; gap: 10px; margin-left: auto; pointer-events: auto; }
-  .toast-confirm-btn {
-    border: none; background: rgba(130, 230, 180, 0.2);
-    color: #a8f0c8;
-    font-family: inherit; font-size: 12.5px;
-    padding: 6px 14px; border-radius: 8px;
-    cursor: pointer;
-    transition: background 0.2s ease;
-  }
+  .toast-confirm-btn { border: none; background: rgba(130, 230, 180, 0.2); color: #a8f0c8; font-family: inherit; font-size: 12.5px; padding: 6px 14px; border-radius: 8px; cursor: pointer; transition: background 0.2s ease; }
   .toast-confirm-btn:hover { background: rgba(130, 230, 180, 0.35); }
-  .toast-cancel-btn {
-    border: none; background: transparent;
-    color: rgba(232, 242, 234, 0.6);
-    font-family: inherit; font-size: 12.5px;
-    padding: 6px 14px; border-radius: 8px;
-    cursor: pointer;
-    transition: color 0.2s ease;
-  }
+  .toast-cancel-btn { border: none; background: transparent; color: rgba(232, 242, 234, 0.6); font-family: inherit; font-size: 12.5px; padding: 6px 14px; border-radius: 8px; cursor: pointer; transition: color 0.2s ease; }
   .toast-cancel-btn:hover { color: #fff; }
 
   /* ==================== 响应式 ==================== */
@@ -1143,19 +828,9 @@
     .cancel-btn { font-size:12px; padding:8px 20px; }
 
     .ai-assistant-container { bottom: 100px; right: 14px; gap: 6px; }
-
-    .ai-action-row {
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-    }
+    .ai-action-row { flex-direction: column; align-items: center; gap: 10px; }
     .ai-sprite-box { order: 1; }
-    .ai-text-btn {
-      order: 2;
-      padding: 10px 18px;
-      font-size: 12px;
-      letter-spacing: 0.08em;
-    }
+    .ai-text-btn { order: 2; padding: 10px 18px; font-size: 12px; letter-spacing: 0.08em; }
 
     .ai-sprite-btn { width: 60px; height: 60px; }
     .eye { width: 14px; height: 14px; }
@@ -1164,17 +839,7 @@
     .sprite-beak { width: 16px; height: 12px; }
     .ai-label { font-size: 10px; }
 
-    .ai-chat-box {
-      width: calc(100vw - 28px);
-      max-width: 380px;
-      height: 58vh;
-      max-height: 500px;
-      right: 0;
-      bottom: calc(100% + 14px);
-      position: absolute;
-      border-radius: 18px;
-      resize: none;
-    }
+    .ai-chat-box { width: calc(100vw - 28px); max-width: 380px; height: 58vh; max-height: 500px; right: 0; bottom: calc(100% + 14px); position: absolute; border-radius: 18px; resize: none; }
     .ai-chat-header { padding: 12px 16px; font-size: 12px; letter-spacing: 0.1em; }
     .ai-chat-messages { padding: 12px; gap: 10px; }
     .ai-message { font-size: 12.5px; padding: 9px 13px; max-width: 88%; }
@@ -1260,17 +925,14 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-    }
+    *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; }
     html { scroll-behavior: auto !important; }
     .bg-image { animation: none !important; transform: scale(1.1); }
     .overlay-main-img { animation: none !important; }
     .particle { display: none !important; }
     .egg { transform: none !important; }
   }
+
   /* ==================== 站内搜索 + 私有知识库（RAG） ==================== */
   .kb-box {
     position: fixed; z-index: 1000002;
@@ -1507,7 +1169,7 @@
   </button>
 </div>
 
-<!-- AI 悬浮助手（白鸟造型） -->
+<!-- AI 悬浮助手 -->
 <div class="ai-assistant-container" id="ai-assistant-container">
   <div class="ai-action-row">
     <button class="ai-text-btn" id="jump-ai-btn" onclick="goToAIScreen()">一键识图</button>
@@ -1884,7 +1546,6 @@ const HISTORY_LIGHTBOX_KEY = 'bird-lightbox';
 
 history.replaceState({ view: HISTORY_BASE_KEY }, '', location.href);
 
-/* 拖动窗口等强制关层时，用这个标记吞掉一次 popstate，避免历史栈留脏数据 */
 var suppressNextPop = false;
 
 window.addEventListener('popstate', function(e) {
@@ -2130,8 +1791,6 @@ document.getElementById('overlayScroll').addEventListener('scroll', function() {
 
 window.addEventListener('resize', () => {
   if (!detailOpen || isBirdModalOpen() || isLightboxOpen()) return;
-  /* 用 history.back() 消化掉 detail 那条记录，不再 push 脏 base
-     （否则下一次按返回会出现「按了没反应，再按直接跳走」） */
   suppressNextPop = true;
   detailOpen = false;
   const overlay = document.getElementById('detailOverlay');
@@ -2191,7 +1850,6 @@ function renderGallery(images) {
   applyImageFallback(mainImg, images[currentImageIndex], '');
   mainImg.style.opacity = '0';
   mainImg.onload = () => { mainImg.style.opacity = '1'; };
-  /* 修复：图片命中缓存时 load 事件不会再触发，否则图集会随机整张空白 */
   if (mainImg.complete && mainImg.naturalWidth > 0) mainImg.style.opacity = '1';
 
   const dots = document.getElementById('galleryDots');
@@ -2377,7 +2035,7 @@ const aiMessages = document.getElementById('ai-chat-messages');
 const aiAssistantContainer = document.getElementById('ai-assistant-container');
 const jumpAIBtn = document.getElementById('jump-ai-btn');
 
-/* ===== API 配置（中转站 x666.me） =====
+/* ===== API 配置（硅基流动 SiliconFlow） =====
    组合拳：
    ① 域名锁 —— 非白名单域名直接返回假密钥，调用必然 401
    ② 暴力打乱密钥 —— 4 段拼接 + 3 个假诱饵 + 干扰条件判断
@@ -2406,12 +2064,10 @@ function _hostAllowed() {
   } catch (e) { return false; }
 }
 
-/* —— 暴力打乱：4 段拼接 —— */
-var _ka = "sk-qb2Oqm53";
-var _kb = "UGhltge9oTWHg";
-var _kc = "Dvg9N2bG1LFl2fc";
-var _kd = "CT2EURjaFDBK";
-/* —— 假诱饵，永远不参与真实拼接 —— */
+/* —— 暴力打乱：真实密钥分 3 段 + 假诱饵 —— */
+var _ka = "sk-rzfnpnsadyu";
+var _kb = "ikhaunmquugxxm";
+var _kc = "okiwfsvjulirbgkinqlmtnu";
 var _fake1 = "sk-this-is-a-fake-key-do-not-use";
 var _fake2 = "sk-dummy-do-not-touch-rotate-please";
 var _fake3 = "sk-expired-2020-please-renew";
@@ -2424,7 +2080,6 @@ function _assembleKey() {
     buf.push(_kb);
     buf.push(_kc);
     if (_fake2.length < 3) buf.push(_fake2);   /* 永远不成立 */
-    buf.push(_kd);
     var s = buf.join('');
     if (s.length < 40) return _fake3;          /* 防篡改兜底 */
     return s;
@@ -2443,7 +2098,9 @@ const API_KEY = (function () {
   return _assembleKey();
 })();
 
-const API_URL = "https://x666.me/v1/chat/completions";
+const API_URL = "https://api.siliconflow.cn/v1/chat/completions";
+const CHAT_MODELS = ["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen2-7B-Instruct"];
+const VISION_MODELS = ["Qwen/Qwen2.5-VL-7B-Instruct", "Qwen/Qwen2-VL-7B-Instruct"];
 
 /* —— 本地限额（localStorage，按天重置） —— */
 const _QUOTA_KEY = 'mg_guard_v2';
@@ -2472,23 +2129,7 @@ function consumeQuota(action) {
   } catch (e) {}
 }
 
-/* 网络层自动重试：中转站偶发抖动时，连接错误自动重发一次（4xx/5xx 不重试） */
-(function () {
-  var _fetch = window.fetch;
-  window.fetch = function (input, init) {
-    var url = typeof input === 'string' ? input : (input && input.url) || '';
-    if (url.indexOf('x666.me') === -1) return _fetch.apply(this, arguments);
-    return _fetch.apply(this, arguments).catch(function (err) {
-      if (err && err.name === 'AbortError') throw err;
-      return new Promise(function (res) { setTimeout(res, 900); }).then(function () {
-        return _fetch.call(window, input, init);
-      });
-    });
-  };
-})();
-const MODEL = "glm-5.3-flash";
-
-/* 统一响应处理：区分 HTTP 错误 / JSON 解析失败 / 断网 */
+/* 统一响应处理 */
 function readApiResponse(response) {
   if (!response.ok) {
     var e = new Error('HTTP ' + response.status);
@@ -2501,7 +2142,56 @@ function readApiResponse(response) {
 function httpFriendlyError(status) {
   if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
   if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
+  if (status === 400 || status === 404) return '模型暂不可用，请稍后重试。';
   return 'AI 服务暂时不可用（错误码 ' + status + '），请稍后再试。';
+}
+
+/* 多模型 Fallback 请求封装 */
+async function fetchWithFallback(models, messages, max_tokens, timeout) {
+  let lastError = null;
+  for (let i = 0; i < models.length; i++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify({
+          model: models[i],
+          messages: messages,
+          max_tokens: max_tokens
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const errText = await res.text();
+        let errMsg = `HTTP ${res.status}`;
+        try {
+          const errJson = JSON.parse(errText);
+          if (errJson.message) errMsg = errJson.message;
+          if (errJson.error && errJson.error.message) errMsg = errJson.error.message;
+        } catch(e) {}
+        
+        const error = new Error(errMsg);
+        error.status = res.status;
+        if (res.status === 401 || res.status === 403) throw error;
+        if (res.status === 400 || res.status === 404) { lastError = error; continue; }
+        lastError = error; continue;
+      }
+      return await res.json();
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) throw err;
+      lastError = err;
+    }
+  }
+  throw lastError || new Error('ALL_FAILED');
 }
 
 let isAILoading = false;
@@ -2728,20 +2418,9 @@ async function sendAIMessage() {
   aiMessages.scrollTop = aiMessages.scrollHeight;
 
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: chatHistory
-      })
-    });
-
-    const data = await readApiResponse(response);
-    aiMessages.removeChild(loadingDiv);
+    const data = await fetchWithFallback(CHAT_MODELS, chatHistory, 500, 45000);
+    
+    if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
     consumeQuota('chat');
 
     if (data.choices && data.choices[0]) {
@@ -2756,7 +2435,7 @@ async function sendAIMessage() {
   } catch (error) {
     console.error("AI 请求失败:", error);
     if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
-    if (error && error.isHttp) appendMessage('bot', httpFriendlyError(error.status));
+    if (error && error.status) appendMessage('bot', httpFriendlyError(error.status));
     else appendMessage('bot', '网络连接失败，请检查一下网络。');
   } finally {
     isAILoading = false;
@@ -2921,7 +2600,6 @@ function compressImage(base64Str, maxWidth, quality) {
       ctx.drawImage(img, 0, 0, width, height);
       var out = canvas.toDataURL('image/jpeg', quality);
       var q = quality;
-      /* 中转站对请求体大小敏感：base64 超过约52万字符(≈380KB)自动降质量重压 */
       while (out.length > 520000 && q > 0.35) {
         q -= 0.1;
         out = canvas.toDataURL('image/jpeg', q);
@@ -2963,32 +2641,19 @@ async function callVisionAPI(base64Data) {
   }, 60000);
 
   try {
-    const response = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${API_KEY}`
-      },
-      body: JSON.stringify({
-        model: "glm-5.3-flash",
-        max_tokens: 2000,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: systemPrompt },
-              { type: "image_url", image_url: { url: base64Data } }
-            ]
-          }
+    const data = await fetchWithFallback(VISION_MODELS, [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: systemPrompt },
+          { type: "image_url", image_url: { url: base64Data } }
         ]
-      }),
-      signal: currentAbortController.signal
-    });
+      }
+    ], 2000, 60000);
 
     if (currentTimeout) { clearTimeout(currentTimeout); currentTimeout = null; }
     currentAbortController = null;
 
-    const data = await readApiResponse(response);
     consumeQuota('scan');
     hideLoading();
 
@@ -3013,7 +2678,7 @@ async function callVisionAPI(base64Data) {
     console.error("视觉 API 请求失败:", error);
     hideLoading();
     uploadArea.style.display = 'flex';
-    if (error && error.isHttp) showResult(httpFriendlyError(error.status), true);
+    if (error && error.status) showResult(httpFriendlyError(error.status), true);
     else showResult("网络连接失败，请检查网络后重试。", true);
   }
 }
@@ -3337,7 +3002,6 @@ function showResult(text, isError) {
     if (typeof navigateTo === 'function') navigateTo(e.pg);
     else location.href = e.pg;
   }
-  /* 跨页深链落地：打开页面后自动弹到对应物种的科普内容 */
   try {
     var kbJumpRaw = sessionStorage.getItem('kbJump');
     if (kbJumpRaw) {
