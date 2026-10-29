@@ -2156,7 +2156,8 @@ const API_URL = "https://api.siliconflow.cn/v1/chat/completions";
 
 // 目前最稳的模型列表
 const CHAT_MODELS = ["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen2-7B-Instruct"];
-const VISION_MODELS = ["Qwen/Qwen2-VL-7B-Instruct", "Qwen/Qwen2.5-VL-7B-Instruct"];
+// ★ 修复：替换为当前有效的视觉模型 Qwen3-VL-8B
+const VISION_MODELS = ["Qwen/Qwen3-VL-8B-Instruct", "Qwen/Qwen2.5-VL-7B-Instruct"];
 
 /* —— 本地限额 —— */
 const _QUOTA_KEY = 'mg_guard_v2';
