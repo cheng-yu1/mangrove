@@ -1555,7 +1555,7 @@
 <div id="cursor-dot"></div>
 <div id="cursor-ring"></div>
 
-<a href="homepage.html#library-section" class="back-btn" id="backBtn" aria-label="返回百科">
+<a href="index.html#library-section" class="back-btn" id="backBtn" aria-label="返回百科">
   <svg viewBox="0 0 24 24"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
   返回百科
 </a>
@@ -1728,11 +1728,7 @@ function consumeQuota(action) {
    ========================================================== */
 var API_CONFIG = {
   urls: ['https://api.siliconflow.cn/v1/chat/completions'],
-  // 核心修复：只保留硅基流动真实支持的视觉模型
-scanModels: [
-  'Qwen/Qwen3-VL-32B-Instruct',
-  'THUDM/GLM-4.1V-9B-Thinking'
-],
+  scanModels: ['Qwen/Qwen3-VL-32B-Instruct', 'THUDM/GLM-4.1V-9B-Thinking'],
   chatModels: ['Qwen/Qwen2.5-7B-Instruct', 'Qwen/Qwen2-7B-Instruct'],
   scanTimeout: 90000,
   chatTimeout: 45000,
@@ -2127,7 +2123,7 @@ window.addEventListener('popstate', function(e) {
 });
 
 function goBackToIndex3() {
-  window.location.href = 'homepage.html#library-section';
+  window.location.href = 'index.html#library-section';
 }
 
 function showToast(text, options) {
