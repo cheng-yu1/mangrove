@@ -122,10 +122,8 @@ body.custom-cursor-on .upload-area {
   height: 100vh;
   pointer-events: none;
   z-index: 90;
-  /* 图片之上、卡片信息之上，进度条 / 音乐 / AI 助手之下 */
 }
 
-/* 触摸设备 + reduced-motion：隐藏自定义光标 */
 @media (hover: none), (pointer: coarse) {
   body, body.custom-cursor-on,
   body.custom-cursor-on a, body.custom-cursor-on button { cursor: auto !important; }
@@ -259,8 +257,6 @@ body.custom-cursor-on .upload-area {
   overflow: hidden;
 }
 
-/* 图片：鼠标跟随位移用 translate3d(var(--tx), var(--ty))
-   Ken Burns 用独立的 scale 属性，两者不冲突 */
 .card-screen .main-img {
   position: absolute;
   inset: 0;
@@ -374,6 +370,17 @@ body.custom-cursor-on .upload-area {
   font-size: 0.8rem;
   line-height: 1.6;
 }
+.zoom-prompt {
+  margin-top: 14px;
+  font-size: 0.75rem;
+  color: #ffd966;
+  opacity: 0.8;
+  letter-spacing: 1px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .card-number {
   position: absolute;
   top: 60px; right: 60px;
@@ -774,14 +781,12 @@ body.custom-cursor-on .upload-area {
   pointer-events: auto;
 }
 
-/* 桌面端：一键识图在左，精灵盒在右 */
 .ai-action-row {
   display: flex;
   align-items: flex-end;
   gap: 12px;
 }
 
-/* 精灵 + label 的居中容器 */
 .ai-sprite-box {
   display: flex;
   flex-direction: column;
@@ -789,7 +794,6 @@ body.custom-cursor-on .upload-area {
   gap: 8px;
 }
 
-/* 一键识图按钮：金色描边 + 深绿底，明显可见 */
 .ai-text-btn {
   display: inline-flex;
   align-items: center;
@@ -913,7 +917,6 @@ body.custom-cursor-on .upload-area {
   100% { transform: scale(1.1) translateY(-5px); }
 }
 
-/* label：文本居中于精灵下方，无 margin 偏移 */
 .ai-label {
   font-size: 11px;
   color: #ffd966;
@@ -925,7 +928,6 @@ body.custom-cursor-on .upload-area {
   white-space: nowrap;
 }
 
-/* ==================== 聊天框 ==================== */
 .ai-chat-box, .ai-chat-box *, #ai-input, #ai-send-btn, .ai-close-btn, .ai-message { cursor: auto !important; }
 #ai-input { cursor: text !important; }
 #ai-send-btn, .ai-close-btn, .ai-clear-btn { cursor: pointer !important; }
@@ -1060,6 +1062,7 @@ body.custom-cursor-on .upload-area {
   .card-info .cold-fact { padding: 8px 12px; }
   .card-info .cold-fact strong { font-size: 0.62rem; letter-spacing: 2px; }
   .card-info .cold-fact span { font-size: 0.75rem; line-height: 1.5; }
+  .zoom-prompt { font-size: 0.7rem; margin-top: 10px; }
 
   .card-number {
     top: 76px; right: 20px;
@@ -1110,15 +1113,12 @@ body.custom-cursor-on .upload-area {
   .icon-btn { width: 42px; height: 42px; }
   .icon-btn svg { width: 18px; height: 18px; }
 
-  /* ============ 手机端 AI 助手：垂直排列 ============ */
   .ai-assistant-container {
     bottom: 84px;
     right: 14px;
     gap: 6px;
     align-items: center;
   }
-
-  /* 手机端改为纵向：精灵在上，一键识图在下 */
   .ai-action-row {
     flex-direction: column;
     align-items: center;
@@ -1147,7 +1147,6 @@ body.custom-cursor-on .upload-area {
 
   .ai-label { font-size: 0.62rem; letter-spacing: 0.05em; }
 
-  /* 手机端聊天框：浮在 AI 助手容器上方 */
   .ai-chat-box {
     width: calc(100vw - 28px);
     max-width: 380px;
@@ -1185,6 +1184,7 @@ body.custom-cursor-on .upload-area {
   .card-info .cold-fact { padding: 7px 10px; }
   .card-info .cold-fact strong { font-size: 0.58rem; letter-spacing: 1.5px; margin-bottom: 2px; }
   .card-info .cold-fact span { font-size: 0.72rem; line-height: 1.45; }
+  .zoom-prompt { font-size: 0.68rem; margin-top: 8px; }
 
   .card-number { top: 66px; right: 14px; font-size: 0.7rem; letter-spacing: 2px; }
   .card-number::after { width: 22px; margin-top: 5px; }
@@ -1209,7 +1209,6 @@ body.custom-cursor-on .upload-area {
   .progress-bar { width: 130px; }
 }
 
-/* 触摸设备禁用 hover 特效 */
 @media (hover: none) and (pointer: coarse) {
   .ai-sprite-btn:hover { transform: none; }
   .back-home-btn:hover { transform: none; }
@@ -1217,7 +1216,6 @@ body.custom-cursor-on .upload-area {
   .progress-dot:hover { transform: none; }
 }
 
-/* 减少动效偏好 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -1233,63 +1231,64 @@ body.custom-cursor-on .upload-area {
   }
   #ambient-canvas { display: none !important; }
 }
-  /* ==================== 站内搜索 + 私有知识库（RAG） ==================== */
-  .kb-box {
-    position: fixed; z-index: 1000002;
-    width: 300px; max-width: calc(100vw - 20px);
-    border-radius: 16px; overflow: hidden;
-    background: rgba(6, 18, 8, 0.96); color: #f0f5e8;
-    border: 1px solid rgba(255, 217, 102, 0.4);
-    box-shadow: 0 18px 50px rgba(0,0,0,.5);
-    font-family: inherit;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .kb-head {
-    display: flex; align-items: center; gap: 8px;
-    padding: 10px 12px; cursor: grab;
-    user-select: none; -webkit-user-select: none;
-    border-bottom: 1px solid rgba(255, 217, 102, 0.25);
-  }
-  .kb-head:active { cursor: grabbing; }
-  .kb-head .kb-ico { flex-shrink: 0; font-size: 14px; }
-  #kbInput {
-    flex: 1; min-width: 0;
-    background: rgba(255,217,102,0.06);
-    border: 1px solid rgba(255,217,102,0.3); border-radius: 10px;
-    padding: 8px 12px; color: #f0f5e8;
-    font-size: 13px; outline: none; font-family: inherit;
-  }
-  #kbInput:focus { border-color: #ffd966; }
-  #kbInput::placeholder { color: #f0f5e8; opacity: .45; }
-  .kb-grip { flex-shrink: 0; opacity: .45; letter-spacing: -1px; cursor: grab; }
-  .kb-list { max-height: 250px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
-  .kb-item {
-    display: flex; align-items: center; gap: 10px;
-    padding: 8px 14px; cursor: pointer;
-    border-bottom: 1px solid rgba(255,217,102,0.15);
-  }
-  .kb-item:hover, .kb-item.sel { background: rgba(255,217,102,0.1); }
-  .kb-item img { width: 42px; height: 42px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
-  .kb-item .k-name { font-weight: 700; font-size: 13.5px; }
-  .kb-item .k-sub { font-size: 10.5px; opacity: .6; margin-top: 1px; letter-spacing: .03em; }
-  .kb-item .k-cat {
-    margin-left: auto; flex-shrink: 0;
-    font-size: 10px; letter-spacing: .1em;
-    padding: 2px 8px; border-radius: 20px;
-    background: rgba(255,217,102,0.07); border: 1px solid rgba(255,217,102,0.25); opacity: .85;
-  }
-  .kb-empty { padding: 16px 14px; font-size: 12px; opacity: .55; text-align: center; letter-spacing: .04em; line-height: 1.8; }
-  .kb-col { flex-shrink: 0; cursor: pointer; opacity: .7; font-weight: 700; padding: 0 3px; }
-  .kb-col:hover { opacity: 1; }
-  .kb-box.collapsed #kbInput, .kb-box.collapsed .kb-list { display: none; }
-  .kb-box.collapsed { width: auto; max-width: calc(100vw - 60px); }
-  .kb-box.collapsed .kb-empty { display: none; }
-  @media (max-width: 600px) { .kb-box { width: calc(100vw - 20px); } .kb-list { max-height: 46vh; } }
+
+/* ==================== 站内搜索 + 私有知识库（RAG） ==================== */
+.kb-box {
+  position: fixed; z-index: 1000002;
+  width: 300px; max-width: calc(100vw - 20px);
+  border-radius: 16px; overflow: hidden;
+  background: rgba(6, 18, 8, 0.96); color: #f0f5e8;
+  border: 1px solid rgba(255, 217, 102, 0.4);
+  box-shadow: 0 18px 50px rgba(0,0,0,.5);
+  font-family: inherit;
+  -webkit-tap-highlight-color: transparent;
+}
+.kb-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 10px 12px; cursor: grab;
+  user-select: none; -webkit-user-select: none;
+  border-bottom: 1px solid rgba(255, 217, 102, 0.25);
+}
+.kb-head:active { cursor: grabbing; }
+.kb-head .kb-ico { flex-shrink: 0; font-size: 14px; }
+#kbInput {
+  flex: 1; min-width: 0;
+  background: rgba(255,217,102,0.06);
+  border: 1px solid rgba(255,217,102,0.3); border-radius: 10px;
+  padding: 8px 12px; color: #f0f5e8;
+  font-size: 13px; outline: none; font-family: inherit;
+}
+#kbInput:focus { border-color: #ffd966; }
+#kbInput::placeholder { color: #f0f5e8; opacity: .45; }
+.kb-grip { flex-shrink: 0; opacity: .45; letter-spacing: -1px; cursor: grab; }
+.kb-list { max-height: 250px; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+.kb-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 14px; cursor: pointer;
+  border-bottom: 1px solid rgba(255,217,102,0.15);
+}
+.kb-item:hover, .kb-item.sel { background: rgba(255,217,102,0.1); }
+.kb-item img { width: 42px; height: 42px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+.kb-item .k-name { font-weight: 700; font-size: 13.5px; }
+.kb-item .k-sub { font-size: 10.5px; opacity: .6; margin-top: 1px; letter-spacing: .03em; }
+.kb-item .k-cat {
+  margin-left: auto; flex-shrink: 0;
+  font-size: 10px; letter-spacing: .1em;
+  padding: 2px 8px; border-radius: 20px;
+  background: rgba(255,217,102,0.07); border: 1px solid rgba(255,217,102,0.25); opacity: .85;
+}
+.kb-empty { padding: 16px 14px; font-size: 12px; opacity: .55; text-align: center; letter-spacing: .04em; line-height: 1.8; }
+.kb-col { flex-shrink: 0; cursor: pointer; opacity: .7; font-weight: 700; padding: 0 3px; }
+.kb-col:hover { opacity: 1; }
+.kb-box.collapsed #kbInput, .kb-box.collapsed .kb-list { display: none; }
+.kb-box.collapsed { width: auto; max-width: calc(100vw - 60px); }
+.kb-box.collapsed .kb-empty { display: none; }
+@media (max-width: 600px) { .kb-box { width: calc(100vw - 20px); } .kb-list { max-height: 46vh; } }
 </style>
 </head>
 <body>
 
-<a href="homepage.html#library-section" class="back-home-btn" aria-label="返回百科">
+<a href="index.html#library-section" class="back-home-btn" aria-label="返回百科">
   <svg viewBox="0 0 24 24" class="svg-icon"><path d="M19 12H5M11 18l-6-6 6-6"/></svg>
   返回
 </a>
@@ -1329,6 +1328,7 @@ body.custom-cursor-on .upload-area {
           <span>玉带凤蝶的雌蝶会模仿有毒的红珠凤蝶——这种"借别人的毒名保护自己"的策略，在生物学上叫"贝氏拟态"。</span>
         </div>
       </div>
+      <div class="zoom-prompt">💡 点击上方图片可放大查看</div>
     </div>
   </section>
 
@@ -1351,6 +1351,7 @@ body.custom-cursor-on .upload-area {
           <span>紫斑蝶是"越冬迁徙"的蝴蝶。每年冬天，成千上万只聚在同一个山谷里挤在一起取暖，如同蝴蝶版的"冬日营帐"。</span>
         </div>
       </div>
+      <div class="zoom-prompt">💡 点击上方图片可放大查看</div>
     </div>
   </section>
 
@@ -1373,6 +1374,7 @@ body.custom-cursor-on .upload-area {
           <span>虎斑蝶的幼虫吃有毒的萝藦科植物，把毒素储存在体内。成虫后，这身毒衣让鸟儿敬而远之——漂亮的警戒色就是这么来的。</span>
         </div>
       </div>
+      <div class="zoom-prompt">💡 点击上方图片可放大查看</div>
     </div>
   </section>
 
@@ -1395,6 +1397,7 @@ body.custom-cursor-on .upload-area {
           <span>蝴蝶翅膀的颜色，一半来自色素，一半来自鳞片的微观结构。结构色会随角度变化，这就是为什么有的蝴蝶越看越闪。</span>
         </div>
       </div>
+      <div class="zoom-prompt">💡 点击上方图片可放大查看</div>
     </div>
   </section>
 
@@ -1417,6 +1420,7 @@ body.custom-cursor-on .upload-area {
           <span>蜻蜓的翅膀可以独立控制，能悬停、倒退、急转弯。它的复眼由近3万个小眼组成，视野几乎360度无死角。</span>
         </div>
       </div>
+      <div class="zoom-prompt">💡 点击上方图片可放大查看</div>
     </div>
   </section>
 
@@ -1439,6 +1443,7 @@ body.custom-cursor-on .upload-area {
           <span>螳螂的头部可以180度旋转，是昆虫中唯一能"回头看"的。它的复眼还能感知3D影像，锁定猎物的距离。</span>
         </div>
       </div>
+      <div class="zoom-prompt">💡 点击上方图片可放大查看</div>
     </div>
   </section>
 
@@ -1461,6 +1466,7 @@ body.custom-cursor-on .upload-area {
           <span>斑络新妇的蛛丝在阳光下泛着金色。研究表明，这种金色能反射紫外线，反而更容易吸引昆虫撞上来——漂亮的陷阱。</span>
         </div>
       </div>
+      <div class="zoom-prompt">💡 点击上方图片可放大查看</div>
     </div>
   </section>
 
@@ -1582,10 +1588,157 @@ body.custom-cursor-on .upload-area {
 (function() {
   'use strict';
 
+  // ==================== 组合拳：域名锁 + 密钥打乱 + 限额 ====================
+  var _ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.github.io', '.vercel.app', '.netlify.app', '.pages.dev'];
+  function _hostAllowed() {
+    try {
+      if (location.protocol === 'file:') return false;
+      var h = location.hostname.toLowerCase();
+      if (!h) return false;
+      for (var i = 0; i < _ALLOWED_HOSTS.length; i++) {
+        var rule = _ALLOWED_HOSTS[i];
+        if (rule.charAt(0) === '.') {
+          if (h === rule.slice(1) || h.endsWith(rule)) return true;
+        } else if (h === rule) {
+          return true;
+        }
+      }
+      return false;
+    } catch (e) { return false; }
+  }
+
+  var _ka = "sk-rzfnpnsadyu";
+  var _kb = "ikhaunmquugxxm";
+  var _kc = "okiwfsvjulirbgkinqlmtnu";
+  var _fake1 = "sk-this-is-a-fake-key-do-not-use";
+  var _fake2 = "sk-dummy-do-not-touch-rotate-please";
+
+  function _assembleKey() {
+    var _sig = "v3";
+    if (_sig === "v3") {
+      var buf = [_ka];
+      if (_fake1.length < 5) buf.push(_fake1);
+      buf.push(_kb);
+      buf.push(_kc);
+      if (_fake2.length < 3) buf.push(_fake2);
+      var s = buf.join('');
+      if (s.length < 40) return _fake1;
+      return s;
+    }
+    return _fake2;
+  }
+
+  const _apiAccessOk = _hostAllowed();
+  const API_KEY = (function () {
+    if (!_apiAccessOk) {
+      try { console.warn('[api] unauthorized host:', location.hostname); } catch (e) {}
+      return _fake2;
+    }
+    return _assembleKey();
+  })();
+
+  const API_URL = "https://api.siliconflow.cn/v1/chat/completions";
+  const CHAT_MODELS = ["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen2-7B-Instruct"];
+  const VISION_MODELS = ["Qwen/Qwen3-VL-8B-Instruct", "Qwen/Qwen2.5-VL-7B-Instruct"];
+
+  const _QUOTA_KEY = 'mg_guard_v2';
+  const _QUOTA_LIMIT = { chat: 20, scan: 5 };
+  function _todayKey() { return new Date().toISOString().split('T')[0]; }
+
+  function verifyQuota(action) {
+    try {
+      var d = _todayKey();
+      var q = JSON.parse(localStorage.getItem(_QUOTA_KEY) || '{}');
+      if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+      if (action === 'chat' && q.chat >= _QUOTA_LIMIT.chat) return false;
+      if (action === 'scan' && q.scan >= _QUOTA_LIMIT.scan) return false;
+      return true;
+    } catch (e) { return true; }
+  }
+
+  function consumeQuota(action) {
+    try {
+      var d = _todayKey();
+      var q = JSON.parse(localStorage.getItem(_QUOTA_KEY) || '{}');
+      if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+      if (action === 'chat') q.chat++;
+      if (action === 'scan') q.scan++;
+      localStorage.setItem(_QUOTA_KEY, JSON.stringify(q));
+    } catch (e) {}
+  }
+
+  function fetchWithFallback(models, messages, max_tokens, timeout) {
+    return new Promise(async function(resolve, reject) {
+      let lastError = null;
+      for (let i = 0; i < models.length; i++) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), timeout);
+          
+          const res = await fetch(API_URL, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${API_KEY}`
+            },
+            body: JSON.stringify({
+              model: models[i],
+              messages: messages,
+              max_tokens: max_tokens
+            }),
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!res.ok) {
+            const errText = await res.text();
+            let errMsg = `HTTP ${res.status}`;
+            try {
+              const errJson = JSON.parse(errText);
+              if (errJson.message) errMsg = errJson.message;
+              if (errJson.error && errJson.error.message) errMsg = errJson.error.message;
+            } catch(e) {}
+            
+            const error = new Error(errMsg);
+            error.status = res.status;
+            error.backendMsg = errMsg;
+            
+            if (res.status === 401 || res.status === 403) throw error;
+            if (res.status === 400 || res.status === 404 || errMsg.includes('Model')) { 
+              lastError = error; 
+              continue; 
+            }
+            lastError = error; 
+            continue;
+          }
+          return resolve(await res.json());
+        } catch (err) {
+          if (err.status === 401 || err.status === 403) return reject(err);
+          lastError = err;
+        }
+      }
+      reject(lastError || new Error('ALL_FAILED'));
+    });
+  }
+
+  function httpFriendlyError(status, backendMsg) {
+    if (backendMsg) {
+      if (backendMsg.includes('Model does not exist') || backendMsg.includes('Model disabled')) {
+        return '当前选用的模型暂不可用，后台正在切换备用模型，请稍后重试。';
+      }
+      return backendMsg;
+    }
+    if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
+    if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
+    if (status === 400 || status === 404) return '模型暂不可用，请稍后重试。';
+    return 'AI 服务暂时不可用（错误码 ' + status + '），请稍后再试。';
+  }
+
+  // ==================== 环境检测 ====================
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
   const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ==================== SVG 图标 ==================== */
   const ICONS = {
     info: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 8h.01M11 12h1v5h1"/></svg>',
     warning: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.7L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.7a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><circle cx="12" cy="17" r="0.6" fill="currentColor" stroke="none"/></svg>',
@@ -1593,7 +1746,7 @@ body.custom-cursor-on .upload-area {
     soundOff: '<path d="M11 5L6 9H2v6h4l5 4z"/><path d="M22 9l-6 6M16 9l6 6"/>'
   };
 
-  /* ==================== 光标（降级安全） ==================== */
+  // ==================== 光标 ====================
   const cursorCore = document.getElementById('cursorCore');
   let mx = 0, my = 0, cx = 0, cy = 0;
   let customCursorOn = false;
@@ -1642,7 +1795,6 @@ body.custom-cursor-on .upload-area {
     cursorCore.style.display = 'none';
   }
 
-  // 涟漪上限保护，避免快速移动时 DOM 堆积
   let rippleCount = 0;
   function createRipple(x, y) {
     if (rippleCount > 6) return;
@@ -1659,7 +1811,7 @@ body.custom-cursor-on .upload-area {
     }, 950);
   }
 
-  /* ==================== 萤火虫 ==================== */
+  // ==================== 萤火虫 ====================
   (function initFireflies() {
     if (prefersReducedMotion) return;
     const c = document.getElementById('fireflies');
@@ -1676,7 +1828,7 @@ body.custom-cursor-on .upload-area {
     }
   })();
 
-  /* ==================== Toast ==================== */
+  // ==================== Toast ====================
   function showToast(text, options) {
     options = options || {};
     const container = document.getElementById('toast-container');
@@ -1714,7 +1866,7 @@ body.custom-cursor-on .upload-area {
     }
   }
 
-  /* ==================== 横向滑动 ==================== */
+  // ==================== 横向滑动 ====================
   const container = document.getElementById('horizontalScroll');
   const screens = document.querySelectorAll('.screen');
   const dots = document.querySelectorAll('.progress-dot');
@@ -1724,7 +1876,6 @@ body.custom-cursor-on .upload-area {
   let currentIndex = 0;
   let isAnimating = false;
 
-  // 桌面端滚轮：带例外出口，不劫持输入框/结果框/聊天框
   if (!isTouchDevice) {
     container.addEventListener('wheel', function(e) {
       if (e.target.closest && e.target.closest('.ai-result-box, .ai-chat-box, .kb-list, .kb-box, input, textarea, .ai-chat-messages')) {
@@ -1743,7 +1894,6 @@ body.custom-cursor-on .upload-area {
       setTimeout(function() { isAnimating = false; }, 700);
     }, { passive: false });
 
-    // 桌面端拖拽
     let isDragging = false;
     let dragStartX = 0;
     let dragStartScrollLeft = 0;
@@ -1773,7 +1923,6 @@ body.custom-cursor-on .upload-area {
     });
   }
 
-  // 手机端 scroll 事件同步索引
   container.addEventListener('scroll', function() {
     const idx = Math.round(container.scrollLeft / window.innerWidth);
     if (idx !== currentIndex) {
@@ -1803,7 +1952,6 @@ body.custom-cursor-on .upload-area {
     });
   });
 
-  // 桌面端方向键 + Escape
   document.addEventListener('keydown', function(e) {
     var tag = e.target.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA') return;
@@ -1830,7 +1978,7 @@ body.custom-cursor-on .upload-area {
   }
   window.goToAIScreen = goToAIScreen;
 
-  /* ==================== History 状态机（防大退） ==================== */
+  // ==================== History ====================
   history.replaceState({ view: 'bug-base' }, '', location.href);
 
   window.addEventListener('popstate', function(e) {
@@ -1841,10 +1989,10 @@ body.custom-cursor-on .upload-area {
       history.pushState({ view: 'bug-base' }, '', location.href);
       return;
     }
-    window.location.href = 'homepage.html#library-section';
+    window.location.href = 'index.html#library-section';
   });
 
-  /* ==================== Lightbox ==================== */
+  // ==================== Lightbox ====================
   let lbScale = 1, lbX = 0, lbY = 0;
   let lbDragging = false, lbStartX = 0, lbStartY = 0;
 
@@ -1897,7 +2045,7 @@ body.custom-cursor-on .upload-area {
 
   updateProgress();
 
-  /* ==================== 音乐 ==================== */
+  // ==================== 音乐 ====================
   const bgm = document.getElementById('bgm');
   const soundBtn = document.getElementById('sound-toggle');
   const soundIcon = document.getElementById('sound-icon');
@@ -1958,7 +2106,7 @@ body.custom-cursor-on .upload-area {
 
   updateSoundIcon();
 
-  /* ==================== AI 助手 ==================== */
+  // ==================== AI 助手 ====================
   const aiFloatBtn = document.getElementById('ai-float-btn');
   const aiChatBox = document.getElementById('ai-chat-box');
   const aiCloseBtn = document.getElementById('ai-close-btn');
@@ -1967,45 +2115,6 @@ body.custom-cursor-on .upload-area {
   const aiSendBtn = document.getElementById('ai-send-btn');
   const aiMessages = document.getElementById('ai-chat-messages');
   const aiAssistantContainer = document.getElementById('ai-assistant-container');
-
-  /* ===== API 配置（中转站 x666.me） ===== */
-  const API_KEY = (function () {
-    var s = "KBDFajRUE2TCcf2lFL1Gb2N9gvDgHWTo9egtlhGU35mqO2bq-ks"; /* 倒序混淆串：防爬虫特征搜索 */
-    return s.split("").reverse().join("");
-  })();
-  const API_URL = "https://x666.me/v1/chat/completions";
-
-  /* 网络层自动重试：中转站偶发抖动时，连接错误自动重发一次（4xx/5xx 不重试） */
-  (function () {
-    var _fetch = window.fetch;
-    window.fetch = function (input, init) {
-      var url = typeof input === 'string' ? input : (input && input.url) || '';
-      if (url.indexOf('x666.me') === -1) return _fetch.apply(this, arguments);
-      return _fetch.apply(this, arguments).catch(function (err) {
-        if (err && err.name === 'AbortError') throw err;
-        return new Promise(function (res) { setTimeout(res, 900); }).then(function () {
-          return _fetch.call(window, input, init);
-        });
-      });
-    };
-  })();
-  const MODEL = "glm-5.3-flash";
-
-  /* 统一响应处理：区分 HTTP 错误 / JSON 解析失败 / 断网 */
-  function readApiResponse(response) {
-    if (!response.ok) {
-      var e = new Error('HTTP ' + response.status);
-      e.isHttp = true;
-      e.status = response.status;
-      throw e;
-    }
-    return response.json();
-  }
-  function httpFriendlyError(status) {
-    if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
-    if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
-    return 'AI 服务暂时不可用（错误码 ' + status + '），请稍后再试。';
-  }
 
   let isAILoading = false;
 
@@ -2128,7 +2237,6 @@ body.custom-cursor-on .upload-area {
     saveChatHistory();
   });
 
-  /* ===== 聊天记录：跨页兼容 + XSS 防护 ===== */
   function saveChatHistory() {
     try {
       const msgs = aiMessages.querySelectorAll('.ai-message');
@@ -2163,7 +2271,6 @@ body.custom-cursor-on .upload-area {
     const saved = localStorage.getItem('mangroveChatHistory');
     if (!saved) return;
 
-    // 新版 JSON
     if (saved.charAt(0) === '[') {
       try {
         const arr = JSON.parse(saved);
@@ -2174,7 +2281,6 @@ body.custom-cursor-on .upload-area {
       } catch (e) {}
     }
 
-    // 旧版 HTML：用 DOMParser 隔离解析，防 XSS
     if (saved.indexOf('ai-message') >= 0 || saved.charAt(0) === '<') {
       try {
         const parser = new DOMParser();
@@ -2205,6 +2311,15 @@ body.custom-cursor-on .upload-area {
     const text = aiInput.value.trim();
     if (!text || isAILoading) return;
 
+    if (!_apiAccessOk) {
+      appendMessage('bot', '当前域名未授权使用 AI 服务，请通过正规入口访问。');
+      return;
+    }
+    if (!verifyQuota('chat')) {
+      appendMessage('bot', '今日聊天次数已用尽（防刷限制：每天最多 20 次），明天再来吧 🌿');
+      return;
+    }
+
     appendMessage('user', text);
     aiInput.value = '';
     isAILoading = true;
@@ -2223,20 +2338,10 @@ body.custom-cursor-on .upload-area {
     aiMessages.scrollTop = aiMessages.scrollHeight;
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + API_KEY
-        },
-        body: JSON.stringify({
-          model: MODEL,
-          messages: chatHistory
-        })
-      });
-
-      const data = await readApiResponse(response);
-      aiMessages.removeChild(loadingDiv);
+      const data = await fetchWithFallback(CHAT_MODELS, chatHistory, 500, 45000);
+      
+      if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
+      consumeQuota('chat');
 
       if (data.choices && data.choices[0]) {
         const _m = data.choices[0].message || {};
@@ -2249,7 +2354,7 @@ body.custom-cursor-on .upload-area {
     } catch (error) {
       console.error("AI 请求失败:", error);
       if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
-      if (error && error.isHttp) appendMessage('bot', httpFriendlyError(error.status));
+      if (error && error.status) appendMessage('bot', httpFriendlyError(error.status, error.backendMsg));
       else appendMessage('bot', '网络连接失败，请检查一下网络。');
     } finally {
       isAILoading = false;
@@ -2271,7 +2376,7 @@ body.custom-cursor-on .upload-area {
     if (e.key === 'Enter') sendAIMessage();
   });
 
-  /* ==================== 图像识别 ==================== */
+  // ==================== 图像识别 ====================
   const fileInput = document.getElementById('file-input');
   const uploadArea = document.getElementById('upload-area');
   const loadingSpinner = document.getElementById('loading-spinner');
@@ -2357,6 +2462,15 @@ body.custom-cursor-on .upload-area {
       return;
     }
 
+    if (!_apiAccessOk) {
+      showToast('当前域名未授权使用 AI 识图服务。', { type: 'error', duration: 4000 });
+      return;
+    }
+    if (!verifyQuota('scan')) {
+      showToast('今日识图次数已用尽（防刷限制：每天最多 5 次），明天再来吧 🌿', { type: 'warning', duration: 4000 });
+      return;
+    }
+
     uploadArea.style.display = 'none';
     resultBox.classList.remove('show');
     showLoading();
@@ -2395,7 +2509,6 @@ body.custom-cursor-on .upload-area {
         ctx.drawImage(img, 0, 0, width, height);
         var out = canvas.toDataURL('image/jpeg', quality);
         var q = quality;
-        /* 中转站对请求体大小敏感：base64 超过约52万字符(≈380KB)自动降质量重压 */
         while (out.length > 520000 && q > 0.35) {
           q -= 0.1;
           out = canvas.toDataURL('image/jpeg', q);
@@ -2406,7 +2519,7 @@ body.custom-cursor-on .upload-area {
   }
 
   async function callVisionAPI(base64Data) {
-    const systemPrompt = '你是红树林昆虫识别专家，专注于中国南方（特别是湛江）红树林生态系统中的昆虫、蝴蝶、蜻蜓、蜘蛛等节肢动物。\n\n识别规则（必须遵守）：\n1. 任何名称都不能写成百分百确定，必须带"疑似"二字。\n2. 无法辨认时（图片模糊、主体不突出、光线太差、非生物内容），在【名称】里写"无法识别"，并在【判断依据】里说明原因，其余字段留空。\n3. 重点观察翅膀斑纹、触角、翅脉、体态等关键特征；宁可保守也不要编造一个听起来合理的名字。\n\n请严格按照以下格式回答（共 8 个字段，顺序不能变）：\n【名称】疑似 XX（例如：疑似玉带凤蝶）\n【学名】拉丁学名（把握不大时写"待定"）\n【置信度】高 / 中 / 低（三选一，不要别的写法）\n【判断依据】1-2 句，说明依据了哪些具体特征\n【特征】外形特征（40 字内）\n【习性】生活习性与食性（40 字内）\n【冷知识】一条有趣的科普知识（40 字内）\n【温馨提示】一句很短的话，提醒用户该结果非百分百准确';
+    const systemPrompt = '你是红树林生态识别专家，专注于中国南方（特别是湛江）红树林生态系统中的植物、鸟类、鱼类、昆虫、节肢动物等。\n\n识别规则（必须遵守）：\n1. 任何名称都不能写成百分百确定，必须带"疑似"二字。\n2. 无法辨认时（图片模糊、主体不突出、光线太差、非生物内容），在【名称】里写"无法识别"，并在【判断依据】里说明原因，其余字段留空。\n3. 重点观察外形特征、斑纹、羽色、叶形、体态等关键特征；宁可保守也不要编造一个听起来合理的名字。\n\n请严格按照以下格式回答（共 8 个字段，顺序不能变）：\n【名称】疑似 XX（例如：疑似玉带凤蝶）\n【学名】拉丁学名（把握不大时写"待定"）\n【置信度】高 / 中 / 低（三选一，不要别的写法）\n【判断依据】1-2 句，说明依据了哪些具体特征\n【特征】外形特征（40 字内）\n【习性】生活习性与食性（40 字内）\n【冷知识】一条有趣的科普知识（40 字内）\n【温馨提示】一句很短的话，提醒用户该结果非百分百准确';
 
     currentAbortController = new AbortController();
 
@@ -2421,32 +2534,20 @@ body.custom-cursor-on .upload-area {
     }, 60000);
 
     try {
-      const response = await fetch(API_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + API_KEY
-        },
-        body: JSON.stringify({
-          model: "glm-5.3-flash",
-          max_tokens: 2000,
-          messages: [
-            {
-              role: "user",
-              content: [
-                { type: "text", text: systemPrompt },
-                { type: "image_url", image_url: { url: base64Data } }
-              ]
-            }
+      const data = await fetchWithFallback(VISION_MODELS, [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: systemPrompt },
+            { type: "image_url", image_url: { url: base64Data } }
           ]
-        }),
-        signal: currentAbortController.signal
-      });
+        }
+      ], 2000, 60000);
 
       if (currentTimeout) { clearTimeout(currentTimeout); currentTimeout = null; }
       currentAbortController = null;
 
-      const data = await readApiResponse(response);
+      consumeQuota('scan');
       hideLoading();
 
       if (data.choices && data.choices[0]) {
@@ -2466,12 +2567,11 @@ body.custom-cursor-on .upload-area {
       console.error("视觉 API 请求失败:", error);
       hideLoading();
       uploadArea.style.display = 'flex';
-      if (error && error.isHttp) showResult(httpFriendlyError(error.status), true);
+      if (error && error.status) showResult(httpFriendlyError(error.status, error.backendMsg), true);
       else showResult("网络连接失败，请检查网络后重试。", true);
     }
   }
 
-  /* ===== 结果渲染：用 textContent 防 XSS ===== */
   function renderResult(text) {
     uploadArea.style.display = 'flex';
     resultBox.classList.add('show');
@@ -2562,12 +2662,11 @@ body.custom-cursor-on .upload-area {
     resultInner.appendChild(raw);
   }
 
-  /* ==================== 环境粒子 + 图片跟随 ==================== */
+  // ==================== 环境粒子 + 图片跟随 ====================
   const ambientCanvas = document.getElementById('ambient-canvas');
   const ambientCtx = ambientCanvas.getContext('2d');
   let canvasW = 0, canvasH = 0, canvasDpr = 1;
 
-  // 低性能设备减少粒子数量
   const isLowPerf = (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4)
                  || (navigator.deviceMemory && navigator.deviceMemory < 4);
   const particles = [];
@@ -2579,11 +2678,11 @@ body.custom-cursor-on .upload-area {
       particles.push({
         x: Math.random() * canvasW,
         y: Math.random() * canvasH,
-        vx: (Math.random() - 0.5) * 0.15,   // 极慢横向漂移
-        vy: -0.1 - Math.random() * 0.2,      // 缓慢向上漂浮
-        size: 1 + Math.random() * 2,         // 1-3px
-        alpha: 0.2 + Math.random() * 0.35,   // 0.2-0.55 透明度
-        phase: Math.random() * Math.PI * 2   // 用于横向摆动
+        vx: (Math.random() - 0.5) * 0.15,
+        vy: -0.1 - Math.random() * 0.2,
+        size: 1 + Math.random() * 2,
+        alpha: 0.2 + Math.random() * 0.35,
+        phase: Math.random() * Math.PI * 2
       });
     }
   }
@@ -2608,7 +2707,6 @@ body.custom-cursor-on .upload-area {
     ambientResizeTimer = setTimeout(resizeAmbient, 150);
   });
 
-  // 鼠标跟随目标（反方向偏移，最多 ±10px）
   let targetTX = 0, targetTY = 0;
   let curTX = 0, curTY = 0;
 
@@ -2621,14 +2719,12 @@ body.custom-cursor-on .upload-area {
     }, { passive: true });
   }
 
-  // 全局 rAF：跑鼠标跟随 + 粒子
   (function ambientLoop() {
     if (document.hidden) {
       requestAnimationFrame(ambientLoop);
       return;
     }
 
-    // ---- 鼠标跟随（应用到当前可见的卡片图片） ----
     if (!isTouchDevice && !prefersReducedMotion) {
       curTX += (targetTX - curTX) * 0.08;
       curTY += (targetTY - curTY) * 0.08;
@@ -2643,7 +2739,6 @@ body.custom-cursor-on .upload-area {
       }
     }
 
-    // ---- 粒子（仅在 7 个卡片页显示，intro 和 AI 屏不画） ----
     if (!prefersReducedMotion && currentIndex > 0 && currentIndex < totalScreens - 1) {
       ambientCtx.clearRect(0, 0, canvasW, canvasH);
 
@@ -2653,7 +2748,6 @@ body.custom-cursor-on .upload-area {
         p.y += p.vy;
         p.phase += 0.008;
 
-        // 出屏重置
         if (p.y < -10) {
           p.y = canvasH + 10;
           p.x = Math.random() * canvasW;
@@ -2661,7 +2755,6 @@ body.custom-cursor-on .upload-area {
         if (p.x < -10) p.x = canvasW + 10;
         if (p.x > canvasW + 10) p.x = -10;
 
-        // 轻微横向摆动，像真正飘浮的浮尘
         const wobbleX = Math.sin(p.phase) * 0.5;
 
         ambientCtx.beginPath();
@@ -2670,7 +2763,6 @@ body.custom-cursor-on .upload-area {
         ambientCtx.fill();
       }
     } else if (ambientCanvas.width > 0) {
-      // 非卡片页清空画布
       ambientCtx.clearRect(0, 0, canvasW, canvasH);
     }
 
@@ -2888,7 +2980,6 @@ body.custom-cursor-on .upload-area {
     var d = dots[e.js[1] + 1];
     if (d) d.click();
   }
-  /* 跨页深链落地：打开页面后自动滑到对应画廊屏 */
   try {
     var kbJumpRaw = sessionStorage.getItem('kbJump');
     if (kbJumpRaw) {
