@@ -216,6 +216,7 @@ a, button { cursor: none; }
 
 .layer-species-list { display: flex; flex-direction: column; gap: 30px; }
 
+/* 卡片悬停效果与提示词 */
 .species-item {
   background: linear-gradient(145deg, rgba(0, 40, 70, 0.6), rgba(0, 20, 40, 0.4));
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
@@ -223,7 +224,47 @@ a, button { cursor: none; }
   border-radius: 20px; padding: 30px;
   transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
   cursor: pointer; transform-origin: left center;
+  position: relative;
 }
+
+.species-item .card-hint {
+  position: absolute;
+  top: 16px; right: 16px;
+  background: rgba(0, 212, 255, 0.2);
+  border: 1px solid rgba(0, 212, 255, 0.5);
+  color: #00d4ff;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  letter-spacing: 1px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transform: translateY(-10px);
+  pointer-events: none;
+}
+
+.layer-species-list:hover .species-item:not(:hover) {
+  opacity: 0.4;
+  filter: brightness(0.5) grayscale(40%);
+  transform: scale(0.98);
+}
+
+.species-item:hover {
+  z-index: 10;
+  border-color: rgba(0, 212, 255, 0.6);
+  box-shadow: 0 10px 40px rgba(0, 212, 255, 0.15);
+  transform: translateY(-4px) scale(1.02);
+  background: linear-gradient(145deg, rgba(0, 50, 80, 0.8), rgba(0, 30, 50, 0.6));
+}
+
+.species-item:hover .card-hint {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
 .species-item-header { display: flex; align-items: baseline; gap: 14px; margin-bottom: 16px; flex-wrap: wrap; }
 .species-name { font-size: 1.5rem; color: #e6f7ff; letter-spacing: 2px; }
 .species-latin { font-style: italic; color: #7fffd4; font-size: 0.9rem; font-family: 'Georgia', serif; }
@@ -248,7 +289,6 @@ a, button { cursor: none; }
 }
 .species-cold-fact strong { color: #00d4ff; font-size: 0.8rem; display: block; margin-bottom: 6px; letter-spacing: 1px; }
 .species-cold-fact span { color: #c8e0ee; font-size: 0.9rem; line-height: 1.7; }
-.species-view-hint { margin-top: 14px; color: #00d4ff; font-size: 0.82rem; font-weight: bold; letter-spacing: 1px; }
 
 .layer-divider { width: 100%; display: flex; justify-content: center; padding: 20px 0; }
 .divider-line {
@@ -853,6 +893,8 @@ a, button { cursor: none; }
 
 /* ==================== 移动端适配 ==================== */
 @media (max-width: 900px) {
+  * { backdrop-filter: none !important; -webkit-backdrop-filter: none !important; }
+
   .back-home-btn { top: 16px; left: 16px; padding: 9px 18px; font-size: 0.82rem; }
   .text-layer h1 { font-size: 2.6rem; letter-spacing: 5px; }
   .text-layer p { font-size: 0.95rem; }
@@ -873,6 +915,22 @@ a, button { cursor: none; }
   .species-env-row { gap: 12px; padding: 10px 12px; }
   .env-item { font-size: 0.75rem; }
   .species-cold-fact span { font-size: 0.82rem; }
+
+  /* 手机端取消悬停高亮和暗化 */
+  .layer-species-list:hover .species-item:not(:hover) {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+  .species-item:hover {
+    transform: none;
+    box-shadow: none;
+    border-color: rgba(0, 212, 255, 0.15);
+    background: linear-gradient(145deg, rgba(0, 40, 70, 0.6), rgba(0, 20, 40, 0.4));
+  }
+  .species-item .card-hint {
+    display: none;
+  }
 
   .ai-screen-content { padding: 80px 20px 100px; min-height: auto; }
   .ai-screen-title { font-size: 2rem; letter-spacing: 4px; }
@@ -1032,8 +1090,8 @@ a, button { cursor: none; }
 </head>
 <body>
 
-<!-- 返回按钮：跳回 index3 第三屏（书本屏） -->
-<a href="homepage.html#library-section" id="backBtn" class="back-home-btn" aria-label="返回百科">← 返回百科</a>
+<!-- 返回按钮：跳回 index.html 第三屏 -->
+<a href="index.html#library-section" id="backBtn" class="back-home-btn" aria-label="返回百科">← 返回百科</a>
 
 <div class="cursor-core" id="cursorCore"></div>
 
@@ -1086,6 +1144,7 @@ a, button { cursor: none; }
       </div>
       <div class="layer-species-list">
         <div class="species-item" data-layer="tidal" data-img="fish/Uca arcuata1.jpg" data-name="弧边招潮蟹" data-latin="Uca arcuata" data-english="Fiddler Crab" onclick="openModal('tidal', 0)">
+          <div class="card-hint">点击查看详情</div>
           <div class="species-item-header">
             <span class="species-name">弧边招潮蟹</span>
             <span class="species-latin">Uca arcuata</span>
@@ -1102,9 +1161,9 @@ a, button { cursor: none; }
             <strong>🌊 冷知识</strong>
             <span>招潮蟹的大钳子不是用来打架的，而是用来“招手”的。潮水要来时它会提前躲回洞穴，是天然的潮汐预报员。</span>
           </div>
-          <p class="species-view-hint">🔍 点击查看大图和多张图片 →</p>
         </div>
         <div class="species-item" data-layer="tidal" data-img="fish/Periophthalmus modestus1.jpg" data-name="弹涂鱼" data-latin="Periophthalmus modestus" data-english="Shuttles Hoppfish" onclick="openModal('tidal', 1)">
+          <div class="card-hint">点击查看详情</div>
           <div class="species-item-header">
             <span class="species-name">弹涂鱼</span>
             <span class="species-latin">Periophthalmus modestus</span>
@@ -1121,9 +1180,9 @@ a, button { cursor: none; }
             <strong>🌊 冷知识</strong>
             <span>弹涂鱼靠皮肤和口腔黏膜呼吸，只要保持湿润，离开水也能存活很久。它还会在泥滩上“做俯卧撑”来吸引配偶。</span>
           </div>
-          <p class="species-view-hint">🔍 点击查看大图和多张图片 →</p>
         </div>
         <div class="species-item" data-layer="tidal" data-img="fish/Scylla serrata1.jpg" data-name="锯缘青蟹" data-latin="Scylla serrata" data-english="Mud Crab" onclick="openModal('tidal', 2)">
+          <div class="card-hint">点击查看详情</div>
           <div class="species-item-header">
             <span class="species-name">锯缘青蟹</span>
             <span class="species-latin">Scylla serrata</span>
@@ -1140,7 +1199,6 @@ a, button { cursor: none; }
             <strong>🌊 冷知识</strong>
             <span>青蟹是“横行霸道”的代表，它只能横着走。湛江人秋天最爱的“黄油蟹”就是它的特别形态。</span>
           </div>
-          <p class="species-view-hint">🔍 点击查看大图和多张图片 →</p>
         </div>
       </div>
     </div>
@@ -1170,6 +1228,7 @@ a, button { cursor: none; }
       </div>
       <div class="layer-species-list">
         <div class="species-item" data-layer="root" data-img="fish/Mugil cephalus1.jpg" data-name="鲻鱼" data-latin="Mugil cephalus" data-english="Flathead Grey Mullet" onclick="openModal('root', 0)">
+          <div class="card-hint">点击查看详情</div>
           <div class="species-item-header">
             <span class="species-name">鲻鱼</span>
             <span class="species-latin">Mugil cephalus</span>
@@ -1186,9 +1245,9 @@ a, button { cursor: none; }
             <strong>🌊 冷知识</strong>
             <span>鲻鱼的胃里有一层厚肌肉，可以把食物磨碎，它被称为“海洋里的反刍动物”。湛江人用鲻鱼做的“鱼饭”是一道传统美味。</span>
           </div>
-          <p class="species-view-hint">🔍 点击查看大图和多张图片 →</p>
         </div>
         <div class="species-item" data-layer="root" data-img="fish/Acanthopagrus latus1.jpg" data-name="黄鳍棘鲷" data-latin="Acanthopagrus latus" data-english="Yellowfin Seabream" onclick="openModal('root', 1)">
+          <div class="card-hint">点击查看详情</div>
           <div class="species-item-header">
             <span class="species-name">黄鳍棘鲷</span>
             <span class="species-latin">Acanthopagrus latus</span>
@@ -1205,9 +1264,9 @@ a, button { cursor: none; }
             <strong>🌊 冷知识</strong>
             <span>黄鳍棘鲷小时候是“雌雄同体”，成年后才会确定性别。湛江人叫它“黄脚立”，是本地垂钓的名贵鱼种。</span>
           </div>
-          <p class="species-view-hint">🔍 点击查看大图和多张图片 →</p>
         </div>
         <div class="species-item" data-layer="root" data-img="fish/Lateolabrax japonicus1.jpg" data-name="鲈鱼" data-latin="Lateolabrax japonicus" data-english="Japanese Sea Bass" onclick="openModal('root', 2)">
+          <div class="card-hint">点击查看详情</div>
           <div class="species-item-header">
             <span class="species-name">鲈鱼</span>
             <span class="species-latin">Lateolabrax japonicus</span>
@@ -1224,7 +1283,6 @@ a, button { cursor: none; }
             <strong>🌊 冷知识</strong>
             <span>鲈鱼是中国四大淡水名鱼之一，但它其实也能在咸水中生活。湛江人清蒸鲈鱼是一道经典家常菜。</span>
           </div>
-          <p class="species-view-hint">🔍 点击查看大图和多张图片 →</p>
         </div>
       </div>
     </div>
@@ -1254,6 +1312,7 @@ a, button { cursor: none; }
       </div>
       <div class="layer-species-list">
         <div class="species-item" data-layer="coastal" data-img="fish/Trachinotus ovatus1.jpg" data-name="卵形鲳鲹" data-latin="Trachinotus ovatus" data-english="Snubnose Pompano" onclick="openModal('coastal', 0)">
+          <div class="card-hint">点击查看详情</div>
           <div class="species-item-header">
             <span class="species-name">卵形鲳鲹</span>
             <span class="species-latin">Trachinotus ovatus</span>
@@ -1270,9 +1329,9 @@ a, button { cursor: none; }
             <strong>🌊 冷知识</strong>
             <span>湛江是“中国金鲳鱼之都”，全国最大的金鲳鱼产区就在湛江。它的肉质细嫩，刺少，是家庭餐桌上的常客。</span>
           </div>
-          <p class="species-view-hint">🔍 点击查看大图和多张图片 →</p>
         </div>
         <div class="species-item" data-layer="coastal" data-img="fish/Epinephelus coioides1.jpg" data-name="斜带石斑鱼" data-latin="Epinephelus coioides" data-english="Orange-spotted Grouper" onclick="openModal('coastal', 1)">
+          <div class="card-hint">点击查看详情</div>
           <div class="species-item-header">
             <span class="species-name">斜带石斑鱼</span>
             <span class="species-latin">Epinephelus coioides</span>
@@ -1289,7 +1348,6 @@ a, button { cursor: none; }
             <strong>🌊 冷知识</strong>
             <span>石斑鱼是“性别转换高手”，很多石斑鱼小时候是雌性，长大后变成雄性。它们还会变色伪装，是海底的“变色龙”。</span>
           </div>
-          <p class="species-view-hint">🔍 点击查看大图和多张图片 →</p>
         </div>
       </div>
     </div>
@@ -1777,26 +1835,164 @@ const aiSendBtn = document.getElementById('ai-send-btn');
 const aiMessages = document.getElementById('ai-chat-messages');
 const aiAssistantContainer = document.getElementById('ai-assistant-container');
 
-/* ===== API 配置（纯智谱官方接口，稳定可靠） ===== */
-const API_KEY = "66de7713c55546bab9822a2d92a9957b";
-const API_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
-const MODEL = "glm-4-air"; // 聊天模型
-const SCAN_MODEL = "glm-4v-flash"; // 识图模型
+/* ===== API 组合拳 ===== */
+const _ALLOWED_HOSTS = [
+  'localhost', '127.0.0.1',
+  '.github.io', '.vercel.app', '.netlify.app', '.pages.dev'
+];
 
-/* 统一响应处理：区分 HTTP 错误 / JSON 解析失败 / 断网 */
-function readApiResponse(response) {
-    if (!response.ok) {
-        var e = new Error('HTTP ' + response.status);
-        e.isHttp = true;
-        e.status = response.status;
-        throw e;
+function _hostAllowed() {
+  try {
+    if (location.protocol === 'file:') return false;
+    var h = location.hostname.toLowerCase();
+    if (!h) return false;
+    for (var i = 0; i < _ALLOWED_HOSTS.length; i++) {
+      var rule = _ALLOWED_HOSTS[i];
+      if (rule.charAt(0) === '.') {
+        if (h === rule.slice(1) || h.endsWith(rule)) return true;
+      } else if (h === rule) {
+        return true;
+      }
     }
-    return response.json();
+    return false;
+  } catch (e) { return false; }
 }
-function httpFriendlyError(status) {
-    if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
-    if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
-    return '服务器繁忙（错误码 ' + status + '），请稍后重试。';
+
+var _ka = "sk-rzfnpnsadyu";
+var _kb = "ikhaunmquugxxm";
+var _kc = "okiwfsvjulirbgkinqlmtnu";
+var _fake1 = "sk-this-is-a-fake-key-do-not-use";
+var _fake2 = "sk-dummy-do-not-touch-rotate-please";
+
+function _assembleKey() {
+  var _sig = "v3";
+  if (_sig === "v3") {
+    var buf = [_ka];
+    if (_fake1.length < 5) buf.push(_fake1);
+    buf.push(_kb);
+    buf.push(_kc);
+    if (_fake2.length < 3) buf.push(_fake2);
+    var s = buf.join('');
+    if (s.length < 40) return _fake1;
+    return s;
+  }
+  return _fake2;
+}
+
+const _apiAccessOk = _hostAllowed();
+
+const API_KEY = (function () {
+  if (!_apiAccessOk) {
+    try { console.warn('[api] unauthorized host:', location.hostname); } catch (e) {}
+    return _fake2;
+  }
+  return _assembleKey();
+})();
+
+const API_URL = "https://api.siliconflow.cn/v1/chat/completions";
+
+const CHAT_MODELS = ["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen2-7B-Instruct"];
+const VISION_MODELS = ["Qwen/Qwen3-VL-8B-Instruct", "Qwen/Qwen2.5-VL-7B-Instruct"];
+
+const _QUOTA_KEY = 'mg_guard_v2';
+const _QUOTA_LIMIT = { chat: 20, scan: 5 };
+function _todayKey() { return new Date().toISOString().split('T')[0]; }
+
+function verifyQuota(action) {
+  try {
+    var d = _todayKey();
+    var q = JSON.parse(localStorage.getItem(_QUOTA_KEY) || '{}');
+    if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+    if (action === 'chat' && q.chat >= _QUOTA_LIMIT.chat) return false;
+    if (action === 'scan' && q.scan >= _QUOTA_LIMIT.scan) return false;
+    return true;
+  } catch (e) { return true; }
+}
+
+function consumeQuota(action) {
+  try {
+    var d = _todayKey();
+    var q = JSON.parse(localStorage.getItem(_QUOTA_KEY) || '{}');
+    if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
+    if (action === 'chat') q.chat++;
+    if (action === 'scan') q.scan++;
+    localStorage.setItem(_QUOTA_KEY, JSON.stringify(q));
+  } catch (e) {}
+}
+
+function readApiResponse(response) {
+  if (!response.ok) {
+    var e = new Error('HTTP ' + response.status);
+    e.isHttp = true;
+    e.status = response.status;
+    throw e;
+  }
+  return response.json();
+}
+function httpFriendlyError(status, backendMsg) {
+  if (backendMsg) {
+    if (backendMsg.includes('Model does not exist') || backendMsg.includes('Model disabled')) {
+      return '当前选用的模型暂不可用，后台正在切换备用模型，请稍后重试。';
+    }
+    return backendMsg;
+  }
+  if (status === 401) return '接口鉴权失败，请检查 API Key 是否有效。';
+  if (status === 429) return '请求太频繁或额度不足，请稍后再试。';
+  if (status === 400 || status === 404) return '模型暂不可用，请稍后重试。';
+  return 'AI 服务暂时不可用（错误码 ' + status + '），请稍后再试。';
+}
+
+async function fetchWithFallback(models, messages, max_tokens, timeout) {
+  let lastError = null;
+  for (let i = 0; i < models.length; i++) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
+      
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${API_KEY}`
+        },
+        body: JSON.stringify({
+          model: models[i],
+          messages: messages,
+          max_tokens: max_tokens
+        }),
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
+      if (!res.ok) {
+        const errText = await res.text();
+        let errMsg = `HTTP ${res.status}`;
+        try {
+          const errJson = JSON.parse(errText);
+          if (errJson.message) errMsg = errJson.message;
+          if (errJson.error && errJson.error.message) errMsg = errJson.error.message;
+        } catch(e) {}
+        
+        const error = new Error(errMsg);
+        error.status = res.status;
+        error.backendMsg = errMsg;
+        
+        if (res.status === 401 || res.status === 403) throw error;
+        if (res.status === 400 || res.status === 404 || errMsg.includes('Model')) { 
+          lastError = error; 
+          continue; 
+        }
+        lastError = error; 
+        continue;
+      }
+      return await res.json();
+    } catch (err) {
+      if (err.status === 401 || err.status === 403) throw err;
+      lastError = err;
+    }
+  }
+  throw lastError || new Error('ALL_FAILED');
 }
 
 let isAILoading = false;
@@ -2011,6 +2207,15 @@ function sendAIMessage() {
     const text = aiInput.value.trim();
     if (!text || isAILoading) return;
 
+    if (!_apiAccessOk) {
+        appendMessage('bot', '当前域名未授权使用 AI 服务，请通过正规入口访问。');
+        return;
+    }
+    if (!verifyQuota('chat')) {
+        appendMessage('bot', '今日聊天次数已用尽（防刷限制：每天最多 20 次），明天再来吧 🌿');
+        return;
+    }
+
     appendMessage('user', text);
     aiInput.value = '';
     isAILoading = true;
@@ -2028,50 +2233,27 @@ function sendAIMessage() {
     aiMessages.appendChild(loadingDiv);
     aiMessages.scrollTop = aiMessages.scrollHeight;
 
-    function doFetch(attempt) {
-        fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify({
-                model: MODEL,
-                messages: chatHistory,
-                max_tokens: 400,
-                temperature: 0.7
-            })
-        }).then(function(response) {
-            return readApiResponse(response);
-        }).then(function(data) {
-            if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
-            if (data.choices && data.choices[0]) {
-                const _m = data.choices[0].message || {};
-                const reply = String(_m.content || '').trim() || '（AI 没返回内容，请重新发送一次）';
-                appendMessage('bot', reply);
-                chatHistory.push({ role: "assistant", content: reply });
-            } else {
-                appendMessage('bot', '抱歉，AI 返回数据异常，请重试。');
-            }
-            isAILoading = false;
-            saveChatHistory();
-        }).catch(function(error) {
-            if (attempt < 2) {
-                setTimeout(function() {
-                    doFetch(attempt + 1);
-                }, 1500);
-            } else {
-                console.error("AI 请求失败:", error);
-                if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
-                if (error && error.isHttp) appendMessage('bot', httpFriendlyError(error.status));
-                else appendMessage('bot', '网络连接失败，请检查一下网络。');
-                isAILoading = false;
-                saveChatHistory();
-            }
-        });
-    }
-
-    doFetch(0);
+    fetchWithFallback(CHAT_MODELS, chatHistory, 500, 45000).then(function(data) {
+        if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
+        consumeQuota('chat');
+        if (data.choices && data.choices[0]) {
+            const _m = data.choices[0].message || {};
+            const reply = String(_m.content || '').trim() || '（AI 没返回内容，请重新发送一次）';
+            appendMessage('bot', reply);
+            chatHistory.push({ role: "assistant", content: reply });
+        } else {
+            appendMessage('bot', '抱歉，AI 返回数据异常，请重试。');
+        }
+        isAILoading = false;
+        saveChatHistory();
+    }).catch(function(error) {
+        console.error("AI 请求失败:", error);
+        if (aiMessages.contains(loadingDiv)) aiMessages.removeChild(loadingDiv);
+        if (error && error.status) appendMessage('bot', httpFriendlyError(error.status, error.backendMsg));
+        else appendMessage('bot', '网络连接失败，请检查一下网络。');
+        isAILoading = false;
+        saveChatHistory();
+    });
 }
 
 function appendMessage(role, text) {
@@ -2181,6 +2363,15 @@ function handleImageFile(file) {
         return;
     }
 
+    if (!_apiAccessOk) {
+        alert('当前域名未授权使用 AI 识图服务。');
+        return;
+    }
+    if (!verifyQuota('scan')) {
+        alert('今日识图次数已用尽（防刷限制：每天最多 5 次），明天再来吧 🌿');
+        return;
+    }
+
     uploadArea.style.display = 'none';
     resultBox.classList.remove('show');
     showLoading();
@@ -2234,7 +2425,7 @@ function compressImage(base64Str, maxWidth, quality) {
     });
 }
 
-async function callVisionAPI(base64Data, attempt = 0) {
+async function callVisionAPI(base64Data) {
     const systemPrompt = `你是红树林水生生物识别专家，专注于中国南方（特别是湛江）红树林湿地中的鱼类、虾蟹、弹涂鱼等潮间带和近海生物。
 
 识别规则（必须遵守）：
@@ -2266,27 +2457,15 @@ async function callVisionAPI(base64Data, attempt = 0) {
     }, 90000);
 
     try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${API_KEY}`
-            },
-            body: JSON.stringify({
-                model: SCAN_MODEL,
-                max_tokens: 2000,
-                messages: [
-                    {
-                        role: "user",
-                        content: [
-                            { type: "text", text: systemPrompt },
-                            { type: "image_url", image_url: { url: base64Data } }
-                        ]
-                    }
+        const data = await fetchWithFallback(VISION_MODELS, [
+            {
+                role: "user",
+                content: [
+                    { type: "text", text: systemPrompt },
+                    { type: "image_url", image_url: { url: base64Data } }
                 ]
-            }),
-            signal: currentAbortController.signal
-        });
+            }
+        ], 2000, 60000);
 
         if (currentTimeout) {
             clearTimeout(currentTimeout);
@@ -2294,8 +2473,7 @@ async function callVisionAPI(base64Data, attempt = 0) {
         }
         currentAbortController = null;
 
-        const data = await readApiResponse(response);
-        
+        consumeQuota('scan');
         hideLoading();
 
         if (data.choices && data.choices[0]) {
@@ -2318,20 +2496,11 @@ async function callVisionAPI(base64Data, attempt = 0) {
             console.log('用户取消了识别');
             return;
         }
-        
-        if (error && error.isHttp) {
-            // 遇到 503 重试
-            if ((error.status === 503 || error.status === 502 || error.status === 504) && attempt < 2) {
-                return new Promise(function(res){setTimeout(res, 2000);}).then(function(){
-                    return callVisionAPI(base64Data, attempt + 1);
-                });
-            }
-        }
 
         console.error("视觉 API 请求失败:", error);
         hideLoading();
         uploadArea.style.display = 'flex';
-        if (error && error.isHttp) showResult(httpFriendlyError(error.status), true);
+        if (error && error.status) showResult(httpFriendlyError(error.status, error.backendMsg), true);
         else showResult("网络连接失败，请检查网络后重试。", true);
     }
 }
