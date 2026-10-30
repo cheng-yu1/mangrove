@@ -2010,8 +2010,8 @@
             var q = JSON.parse(localStorage.getItem('mg_guard') || '{}');
             if (q.date !== d) q = { date: d, chat: 0, scan: 0 };
             
-            if (action === 'chat' && q.chat >= 20) return false;
-            if (action === 'scan' && q.scan >= 5) return false;
+            if (action === 'chat' && q.chat >= 30) return false;
+            if (action === 'scan' && q.scan >= 15) return false;
             
             return true;
         } catch(e) { return true; }
