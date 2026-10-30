@@ -212,13 +212,20 @@
         text-shadow: 0 4px 40px rgba(0, 0, 0, 0.95), 0 0 80px rgba(0, 0, 0, 0.7), 0 0 120px rgba(126, 232, 181, 0.12);
         margin-bottom: 20px;
     }
-    .end-credit-sub {
-        font-family: "Songti SC", "Noto Serif SC", serif;
-        font-size: 14px;
-        font-size: clamp(12px, 1.3vw, 16px);
-        font-weight: 300; letter-spacing: 0.5em; padding-left: 0.5em;
-        color: rgba(201, 151, 63, 0.85);
-        text-shadow: 0 2px 20px rgba(0, 0, 0, 0.9), 0 0 40px rgba(201, 151, 63, 0.3);
+       .end-credit-sub {
+        font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+        font-size: clamp(14px, 1.6vw, 18px);
+        font-weight: 500;
+        letter-spacing: 0.15em;
+        padding-left: 0.15em;
+        color: #ffffff;
+        background: rgba(0, 0, 0, 0.65); /* 半透明黑底 */
+        padding: 8px 24px; /* 给字留点呼吸空间 */
+        border-radius: 30px; /* 圆角胶囊 */
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(4px); /* 磨砂玻璃效果 */
+        -webkit-backdrop-filter: blur(4px);
+        margin-top: 15px;
     }
     .end-credit::before, .end-credit::after {
         content: ''; position: absolute; left: 50%;
