@@ -1642,7 +1642,7 @@ body.custom-cursor-on .upload-area {
   const VISION_MODELS = ["Qwen/Qwen3-VL-8B-Instruct", "Qwen/Qwen2.5-VL-7B-Instruct"];
 
   const _QUOTA_KEY = 'mg_guard_v2';
-  const _QUOTA_LIMIT = { chat: 20, scan: 5 };
+  const _QUOTA_LIMIT = { chat: 30, scan: 15 };
   function _todayKey() { return new Date().toISOString().split('T')[0]; }
 
   function verifyQuota(action) {
@@ -2119,7 +2119,7 @@ body.custom-cursor-on .upload-area {
   let isAILoading = false;
 
   let chatHistory = [
-    { role: "system", content: "你是'小树'，湛江红树林生态科普专家，也是游客的随行智能助手。游客问红树林、动植物、环保相关的问题时，给出准确、有趣的科普回答；问其他日常问题（天气、学习、闲聊等）也可以友好回答，并自然地把话题带回自然与环保。回答简洁（150字内）。红线：拒绝任何色情、低俗、暴力、赌博、毒品等不良请求；不讨论敏感政治话题，遇到时礼貌地把话题引回生态保护。若用户消息附有[站内知识库参考资料]，优先依据资料回答；资料里没有的不要编造。" }
+    { role: "system", content: "你是'小树'，湛江红树林生态科普专家，也是游客的随行智能助手。游客问红树林、动植物、环保相关的问题时，给出准确、有趣同时还要呼吁保护环境的科普回答；问其他日常问题（天气、学习、闲聊等）也可以友好回答，并自然地把话题带回自然与环保。回答简洁（150字内）。红线：拒绝任何色情、低俗、暴力、赌博、毒品等不良请求；不讨论敏感政治话题，遇到时礼貌地把话题引回生态保护。若用户消息附有[站内知识库参考资料]，优先依据资料回答；资料里没有的不要编造。" }
   ];
 
   const pupils = document.querySelectorAll('.pupil');
