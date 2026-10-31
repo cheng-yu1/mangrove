@@ -2161,7 +2161,7 @@ const VISION_MODELS = ["Qwen/Qwen3-VL-8B-Instruct", "Qwen/Qwen2.5-VL-7B-Instruct
 
 /* —— 本地限额 —— */
 const _QUOTA_KEY = 'mg_guard_v2';
-const _QUOTA_LIMIT = { chat: 20, scan: 5 };
+const _QUOTA_LIMIT = { chat: 30, scan: 15 };
 function _todayKey() { return new Date().toISOString().split('T')[0]; }
 
 function verifyQuota(action) {
