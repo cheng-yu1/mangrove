@@ -1895,7 +1895,7 @@ const CHAT_MODELS = ["Qwen/Qwen2.5-7B-Instruct", "Qwen/Qwen2-7B-Instruct"];
 const VISION_MODELS = ["Qwen/Qwen3-VL-8B-Instruct", "Qwen/Qwen2.5-VL-7B-Instruct"];
 
 const _QUOTA_KEY = 'mg_guard_v2';
-const _QUOTA_LIMIT = { chat: 20, scan: 5 };
+const _QUOTA_LIMIT = { chat: 30, scan: 15 };
 function _todayKey() { return new Date().toISOString().split('T')[0]; }
 
 function verifyQuota(action) {
@@ -1997,7 +1997,7 @@ async function fetchWithFallback(models, messages, max_tokens, timeout) {
 
 let isAILoading = false;
 
-const SYSTEM_PROMPT_TEXT = "你是'小树'，湛江红树林生态科普专家。请遵守以下规则：1. 如果用户消息附有[站内知识库参考资料]，你必须严格优先依据参考资料中的内容回答，不要自己瞎编。2. 只有当参考资料没有相关内容时，才可以使用你自身的知识进行友好解答。3. 回答简洁准确，语气亲切，控制在150字内。4. 红线：拒绝任何色情暴力、敏感政治话题。";
+const SYSTEM_PROMPT_TEXT = "你是'小树'，湛江红树林生态科普专家。请遵守以下规则：1. 如果用户消息附有[站内知识库参考资料]，你必须严格优先依据参考资料中的内容回答，不要自己瞎编。2. 只有当参考资料没有相关内容时，才可以使用你自身的知识进行友好解答同时还要呼吁保护环境。3. 回答简洁准确，语气亲切，控制在150字内。4. 红线：拒绝任何色情暴力、敏感政治话题。";
 
 let chatHistory = [
     { role: "system", content: SYSTEM_PROMPT_TEXT }
